@@ -60,7 +60,7 @@ pub trait OwnerRpc {
 		"method": "accounts",
 		"params": {
 			"token": "d202964900000000d302964900000000d402964900000000d502964900000000",
-			"minimum_confirmations": null
+			"minimum_confirmations": 1
 		},
 		"id": 1
 	}
@@ -73,7 +73,18 @@ pub trait OwnerRpc {
 			"Ok": [
 				{
 					"label": "default",
-					"path": "0200000000000000000000000000000000"
+					"path": "0200000000000000000000000000000000",
+					"info": {
+						 "amount_awaiting_confirmation": "0",
+						 "amount_awaiting_finalization": "0",
+						 "amount_currently_spendable": "60000000000",
+						 "amount_immature": "180000000000",
+						 "amount_locked": "0",
+						 "amount_reverted": "0",
+						 "last_confirmed_height": "4",
+						 "minimum_confirmations": "1",
+						 "total": "240000000000"
+					   }
 				}
 			]
 		},

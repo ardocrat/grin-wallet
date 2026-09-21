@@ -694,7 +694,8 @@ where
 	}
 
 	/// Save an account label -> path mapping.
-	pub fn save_acct_path(&mut self, mapping: AcctPathMapping) -> Result<(), Error> {
+	pub fn save_acct_path(&mut self, mut mapping: AcctPathMapping) -> Result<(), Error> {
+		mapping.info = None;
 		self.db.put_ser(
 			Some(ACCOUNT_PATH_MAPPING_PREFIX),
 			mapping.label.as_bytes(),

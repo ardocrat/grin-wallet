@@ -773,7 +773,6 @@ pub struct AcctPathMapping {
 	/// Corresponding parent BIP32 derivation path
 	pub path: Identifier,
 	/// Wallet information for this account, can be loaded after deserialization.
-	#[serde(skip)]
 	pub info: Option<WalletInfo>,
 }
 
