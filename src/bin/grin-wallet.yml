@@ -50,7 +50,7 @@ subcommands:
             takes_value: true
         - minimum_confirmations:
             help: Minimum number of confirmations required for an output to be spendable
-            short: c
+            short: mc
             long: min_conf
             default_value: "10"
             takes_value: true
