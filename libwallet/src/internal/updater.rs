@@ -25,12 +25,12 @@ use crate::grin_core::global;
 use crate::grin_core::libtx::proof::ProofBuilder;
 use crate::grin_core::libtx::reward;
 use crate::grin_keychain::{Identifier, Keychain, SwitchCommitmentType};
-use crate::grin_util as util;
 use crate::grin_util::secp::key::SecretKey;
 use crate::grin_util::secp::pedersen;
 use crate::grin_util::static_secp_instance;
 use crate::internal::keys;
 use crate::types::{NodeClient, OutputData, OutputStatus, TxLogEntry, TxLogEntryType, WalletInfo};
+use crate::{grin_util as util, AcctPathMapping};
 use crate::{
 	BlockFees, CbData, OutputCommitMapping, RetrieveTxQueryArgs, RetrieveTxQuerySortField,
 	RetrieveTxQuerySortOrder, WalletBackend,
@@ -793,22 +793,12 @@ where
 	Ok(())
 }
 
-/// Retrieve summary info about the wallet
-/// caller should refresh first if desired
-pub fn retrieve_info<C, K>(
-	wallet: &mut WalletBackend<C, K>,
-	parent_key_id: &Identifier,
+/// Return summary info about the wallet account from provided outputs.
+fn account_outputs_info(
+	outputs: Vec<&OutputData>,
+	current_height: u64,
 	minimum_confirmations: u64,
-) -> Result<WalletInfo, Error>
-where
-	C: NodeClient,
-	K: Keychain,
-{
-	let current_height = wallet.last_confirmed_height_for_parent(parent_key_id)?;
-	let outputs = wallet
-		.iter()?
-		.filter(|out| out.root_key_id == *parent_key_id);
-
+) -> Result<WalletInfo, Error> {
 	let mut unspent_total = 0;
 	let mut immature_total = 0;
 	let mut awaiting_finalization_total = 0;
@@ -857,6 +847,51 @@ where
 		amount_currently_spendable: unspent_total,
 		amount_reverted: reverted_total,
 	})
+}
+
+/// Retrieve summary info about the wallet accounts
+/// caller should refresh first if desired
+pub fn retrieve_accounts_info<C, K>(
+	wallet: &mut WalletBackend<C, K>,
+	minimum_confirmations: u64,
+) -> Result<Vec<AcctPathMapping>, Error>
+where
+	C: NodeClient,
+	K: Keychain,
+{
+	let outputs: Vec<OutputData> = wallet.iter()?.collect();
+	let mut accounts = keys::accounts(wallet)?;
+	for a in accounts.iter_mut() {
+		let os = outputs
+			.iter()
+			.filter(|out| out.root_key_id == a.path)
+			.collect::<Vec<_>>();
+		let current_height = wallet.last_confirmed_height_for_parent(&a.path)?;
+		let info = account_outputs_info(os, current_height, minimum_confirmations)?;
+		a.info = Some(info);
+	}
+	Ok(accounts)
+}
+
+/// Retrieve summary info about the wallet
+/// caller should refresh first if desired
+pub fn retrieve_info<C, K>(
+	wallet: &mut WalletBackend<C, K>,
+	parent_key_id: &Identifier,
+	minimum_confirmations: u64,
+) -> Result<WalletInfo, Error>
+where
+	C: NodeClient,
+	K: Keychain,
+{
+	let outputs: Vec<OutputData> = wallet
+		.iter()?
+		.filter(|out| out.root_key_id == *parent_key_id)
+		.collect();
+	let outputs = outputs.iter().collect::<Vec<_>>();
+	let current_height = wallet.last_confirmed_height_for_parent(&parent_key_id)?;
+	let info = account_outputs_info(outputs, current_height, minimum_confirmations)?;
+	Ok(info)
 }
 
 /// Build a coinbase output and insert into wallet
