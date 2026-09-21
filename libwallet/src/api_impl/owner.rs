@@ -62,13 +62,13 @@ where
 {
 	let mut keys_accounts = keys::accounts(w)?;
 	let mut accounts: Vec<AcctPathMapping> = if let Some(mc) = minimum_confirmations {
+		for a in keys_accounts.iter_mut() {
+			a.info = match updater::retrieve_info(w, &a.path, mc) {
+				Ok(info) => Some(info),
+				Err(e) => return Err(e),
+			};
+		}
 		keys_accounts
-			.iter_mut()
-			.map(|a| {
-				a.info = updater::retrieve_info(w, &a.path, mc).ok();
-				a.clone()
-			})
-			.collect()
 	} else {
 		keys_accounts
 	};
