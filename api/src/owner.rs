@@ -266,6 +266,9 @@ where
 	/// # Arguments
 	/// * `keychain_mask` - Wallet secret mask to XOR against the stored wallet seed before using, if
 	/// being used.
+	/// * `minimum_confirmations` - The minimum number of confirmations an output
+	/// should have before it's included in the 'amount_currently_spendable' total for every account
+	/// without updating it from the node, will return no wallet info for accounts if not provided
 	///
 	/// # Returns
 	/// * Result Containing:
