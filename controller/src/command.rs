@@ -580,7 +580,7 @@ where
 
 	println!();
 	if !finalizing {
-		println!("Slatepack data follows. Please provide this output to the other party");
+		println!("Slatepack data follows. Please provide this output to the other party or cancel it manually with `cancel` command.");
 	} else {
 		println!("Slatepack data follows.");
 	}
