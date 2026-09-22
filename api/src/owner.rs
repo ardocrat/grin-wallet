@@ -266,9 +266,6 @@ where
 	/// # Arguments
 	/// * `keychain_mask` - Wallet secret mask to XOR against the stored wallet seed before using, if
 	/// being used.
-	/// * `minimum_confirmations` - The minimum number of confirmations an output
-	/// should have before it's included in the 'amount_currently_spendable' total for every account
-	/// without updating it from the node, will return no wallet info for accounts if not provided
 	///
 	/// # Returns
 	/// * Result Containing:
@@ -288,7 +285,7 @@ where
 	///
 	/// let api_owner = Owner::new(wallet.clone(), None, std::path::PathBuf::from("grin-wallet.toml"));
 	///
-	/// let result = api_owner.accounts(None, Some(2));
+	/// let result = api_owner.accounts(None);
 	///
 	/// if let Ok(accts) = result {
 	///     //...
@@ -298,12 +295,23 @@ where
 	pub fn accounts(
 		&self,
 		keychain_mask: Option<&SecretKey>,
-		minimum_confirmations: Option<u64>,
 	) -> Result<Vec<AcctPathMapping>, Error> {
 		wallet_lock!(self.wallet_inst, w);
 		// Test keychain mask, to keep API consistent
 		let _ = w.keychain(keychain_mask)?;
-		owner::accounts(w, minimum_confirmations)
+		owner::accounts(w, None)
+	}
+
+	/// Returns accounts with balances from local wallet data, without refreshing from the node.
+	/// `minimum_confirmations` is the minimum confirmations required for spendable outputs.
+	pub fn accounts_info(
+		&self,
+		keychain_mask: Option<&SecretKey>,
+		minimum_confirmations: u64,
+	) -> Result<Vec<AcctPathMapping>, Error> {
+		wallet_lock!(self.wallet_inst, w);
+		let _ = w.keychain(keychain_mask)?;
+		owner::accounts(w, Some(minimum_confirmations))
 	}
 
 	/// Creates a new 'account', which is a mapping of a user-specified

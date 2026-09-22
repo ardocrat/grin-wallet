@@ -794,8 +794,8 @@ where
 }
 
 /// Return summary info about the wallet account from provided outputs.
-fn account_outputs_info(
-	outputs: Vec<&OutputData>,
+fn account_outputs_info<T: std::borrow::Borrow<OutputData>>(
+	outputs: impl IntoIterator<Item = T>,
 	current_height: u64,
 	minimum_confirmations: u64,
 ) -> Result<WalletInfo, Error> {
@@ -807,6 +807,7 @@ fn account_outputs_info(
 	let mut reverted_total = 0;
 
 	for out in outputs {
+		let out = out.borrow();
 		match out.status {
 			OutputStatus::Unspent => {
 				if out.is_coinbase && out.lock_height > current_height {
@@ -862,10 +863,7 @@ where
 	let outputs: Vec<OutputData> = wallet.iter()?.collect();
 	let mut accounts = keys::accounts(wallet)?;
 	for a in accounts.iter_mut() {
-		let os = outputs
-			.iter()
-			.filter(|out| out.root_key_id == a.path)
-			.collect::<Vec<_>>();
+		let os = outputs.iter().filter(|out| out.root_key_id == a.path);
 		let current_height = wallet.last_confirmed_height_for_parent(&a.path)?;
 		let info = account_outputs_info(os, current_height, minimum_confirmations)?;
 		a.info = Some(info);
@@ -884,11 +882,9 @@ where
 	C: NodeClient,
 	K: Keychain,
 {
-	let outputs: Vec<OutputData> = wallet
+	let outputs = wallet
 		.iter()?
-		.filter(|out| out.root_key_id == *parent_key_id)
-		.collect();
-	let outputs = outputs.iter().collect::<Vec<_>>();
+		.filter(|out| out.root_key_id == *parent_key_id);
 	let current_height = wallet.last_confirmed_height_for_parent(&parent_key_id)?;
 	let info = account_outputs_info(outputs, current_height, minimum_confirmations)?;
 	Ok(info)

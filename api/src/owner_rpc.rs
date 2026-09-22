@@ -48,7 +48,7 @@ use std::time::Duration;
 #[easy_jsonrpc_mw::rpc]
 pub trait OwnerRpc {
 	/**
-	Networked version of [Owner::accounts](struct.Owner.html#method.accounts).
+	Networked version of [Owner::accounts](struct.Owner.html#method.accounts). Returns account mappings without balances.
 
 	# Json rpc example
 
@@ -58,6 +58,44 @@ pub trait OwnerRpc {
 	{
 		"jsonrpc": "2.0",
 		"method": "accounts",
+		"params": {
+			"token": "d202964900000000d302964900000000d402964900000000d502964900000000"
+		},
+		"id": 1
+	}
+	# "#
+	# ,
+	# r#"
+	{
+		"jsonrpc": "2.0",
+		"result": {
+			"Ok": [
+				{
+					"label": "default",
+					"path": "0200000000000000000000000000000000",
+					"info": null
+				}
+			]
+		},
+		"id": 1
+	}
+	# "#
+	# , 4, false, false, false, false);
+	```
+	*/
+	fn accounts(&self, token: Token) -> Result<Vec<AcctPathMapping>, Error>;
+
+	/**
+	Networked version of [Owner::accounts_info](struct.Owner.html#method.accounts_info). Returns balances from locally stored state without refreshing from the node.
+
+	# Json rpc example
+
+	```
+	# grin_wallet_api::doctest_helper_json_rpc_owner_assert_response!(
+	# r#"
+	{
+		"jsonrpc": "2.0",
+		"method": "accounts_info",
 		"params": {
 			"token": "d202964900000000d302964900000000d402964900000000d502964900000000",
 			"minimum_confirmations": 1
@@ -94,10 +132,10 @@ pub trait OwnerRpc {
 	# , 4, false, false, false, false);
 	```
 	*/
-	fn accounts(
+	fn accounts_info(
 		&self,
 		token: Token,
-		minimum_confirmations: Option<u64>,
+		minimum_confirmations: u64,
 	) -> Result<Vec<AcctPathMapping>, Error>;
 
 	/**
@@ -2101,12 +2139,16 @@ where
 	C: NodeClient + 'static,
 	K: Keychain + 'static,
 {
-	fn accounts(
+	fn accounts(&self, token: Token) -> Result<Vec<AcctPathMapping>, Error> {
+		Owner::accounts(self, (&token.keychain_mask).as_ref())
+	}
+
+	fn accounts_info(
 		&self,
 		token: Token,
-		minimum_confirmations: Option<u64>,
+		minimum_confirmations: u64,
 	) -> Result<Vec<AcctPathMapping>, Error> {
-		Owner::accounts(self, (&token.keychain_mask).as_ref(), minimum_confirmations)
+		Owner::accounts_info(self, (&token.keychain_mask).as_ref(), minimum_confirmations)
 	}
 
 	fn create_account_path(&self, token: Token, label: &String) -> Result<Identifier, Error> {

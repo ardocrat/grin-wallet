@@ -569,6 +569,7 @@ pub fn accounts(acct_mappings: Vec<AcctPathMapping>) {
 	let width = table.to_string().find('\n').unwrap_or(0);
 	println!("{:^1$}", "BIP-32 Derivation Path", width);
 	table.printstd();
+	println!("Balances use local data and may be out of date.");
 	println!();
 }
 
