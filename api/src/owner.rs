@@ -40,6 +40,7 @@ use grin_wallet_util::OnionV3Address;
 
 use chrono::prelude::*;
 use ed25519_dalek::SigningKey as DalekSecretKey;
+use libwallet::wallet_lock;
 use std::convert::TryFrom;
 use std::fs::File;
 use std::io::Write;
@@ -768,7 +769,7 @@ where
 	/// if let Ok(slate) = result {
 	///     // Send slate somehow
 	///     // ...
-	///     // Lock our outputs if we're happy the slate was (or is being) sent
+	///     // Lock our outputs if slate was sent manually with empty send_args
 	///     api_owner.tx_lock_outputs(None, &slate);
 	/// }
 	/// ```
@@ -785,16 +786,14 @@ where
 			}
 			_ => None,
 		};
-		let (slate, tor_config) = {
-			let mut w_lock = self.wallet_inst.lock();
-			let tor_config = send_args
-				.as_ref()
-				.map(|_| crate::tor_config::load(&self.config_path()))
-				.transpose()?;
-			let w = w_lock.lc_provider()?.wallet_inst()?;
-			let slate = owner::init_send_tx(w, keychain_mask, args, self.doctest_mode)?;
-			(slate, tor_config)
-		};
+
+		wallet_lock!(self.wallet_inst, w);
+		let tor_config = send_args
+			.as_ref()
+			.map(|_| crate::tor_config::load(&self.config_path()))
+			.transpose()?;
+		let slate = owner::init_send_tx(w, keychain_mask, args, self.doctest_mode)?;
+
 		// Helper functionality. If send arguments exist, attempt to send sync and
 		// finalize
 		match send_args {
@@ -806,7 +805,7 @@ where
 				if self.doctest_mode || !can_send || dest.is_none() {
 					return Ok(slate);
 				}
-				self.tx_lock_outputs(keychain_mask, &slate)?;
+				owner::tx_lock_outputs(w, keychain_mask, &slate)?;
 				let res =
 					try_slatepack_sync_workflow(&slate, &dest.unwrap(), Some(tc), None, false);
 				match res {
