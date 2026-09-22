@@ -792,6 +792,7 @@ where
 			.as_ref()
 			.map(|_| crate::tor_config::load(&self.config_path()))
 			.transpose()?;
+		let late_lock = args.late_lock.unwrap_or(false);
 		let slate = owner::init_send_tx(w, keychain_mask, args, self.doctest_mode)?;
 
 		// Helper functionality. If send arguments exist, attempt to send sync and
@@ -805,7 +806,9 @@ where
 				if self.doctest_mode || !can_send || dest.is_none() {
 					return Ok(slate);
 				}
-				owner::tx_lock_outputs(w, keychain_mask, &slate)?;
+				if !late_lock {
+					owner::tx_lock_outputs(w, keychain_mask, &slate)?;
+				}
 				let res =
 					try_slatepack_sync_workflow(&slate, &dest.unwrap(), Some(tc), None, false);
 				match res {

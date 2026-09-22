@@ -505,10 +505,12 @@ where
 
 	let can_send = tor_config.send_tor(args.skip_tor);
 	if test_mode || !can_send || dest.is_none() {
-		return output_sp(owner_api, true);
+		return output_sp(owner_api, !args.late_lock);
 	}
 
-	owner_api.tx_lock_outputs(keychain_mask, &slate)?;
+	if !args.late_lock {
+		owner_api.tx_lock_outputs(keychain_mask, &slate)?;
+	}
 
 	let dest = dest.as_ref().unwrap();
 	let res = try_slatepack_sync_workflow(&slate, dest, Some(tor_config), None, false);
