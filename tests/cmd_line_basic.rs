@@ -728,6 +728,44 @@ fn command_line_test_impl(test_dir: &str) -> Result<(), grin_wallet_controller::
 		},
 	)?;
 
+	// Failed send, with --late-lock, make sure outputs not locked (amount not changed).
+	let mut old_balance = 0;
+	grin_wallet_controller::controller::owner_single_use(
+		wallet2.clone(),
+		mask2,
+		PathBuf::from(test_dir),
+		|api, m| {
+			api.set_active_account(m, "account_1")?;
+			let (_, wallet1_info) = api.retrieve_summary_info(m, true, 1)?;
+			old_balance = wallet1_info.amount_currently_spendable;
+			Ok(())
+		},
+	)?;
+	let arg_vec = vec![
+		"grin-wallet",
+		"-p",
+		"password2",
+		"-a",
+		"account_1",
+		"send",
+		"-d",
+		"tgrin1xtxavwfgs48ckf3gk8wwgcndmn0nt4tvkl8a7ltyejjcy2mc6nfs9gm2lp",
+		"1",
+		"--late-lock",
+	];
+	execute_command(&app, test_dir, "wallet2", &client2, arg_vec)?;
+	grin_wallet_controller::controller::owner_single_use(
+		wallet2.clone(),
+		mask2,
+		PathBuf::from(test_dir),
+		|api, m| {
+			api.set_active_account(m, "account_1")?;
+			let (_, wallet1_info) = api.retrieve_summary_info(m, true, 1)?;
+			assert_eq!(old_balance, wallet1_info.amount_currently_spendable);
+			Ok(())
+		},
+	)?;
+
 	// let logging finish
 	thread::sleep(Duration::from_millis(200));
 	clean_output_dir(test_dir);

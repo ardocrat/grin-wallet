@@ -28,6 +28,7 @@ use std::time::Duration;
 #[macro_use]
 mod common;
 use common::{clean_output_dir, create_wallet_proxy, setup};
+use libwallet::InitTxSendArgs;
 
 /// self send impl
 fn late_lock_test_impl(test_dir: &'static str) -> Result<(), libwallet::Error> {
@@ -151,6 +152,29 @@ fn late_lock_test_impl(test_dir: &'static str) -> Result<(), libwallet::Error> {
 			// Reward from mining 11 blocks, minus the amount sent.
 			// Note: We mined the block containing the tx, so fees are effectively refunded.
 			assert_eq!(560_000_000_000, wallet_info.amount_currently_spendable);
+
+			// Make sure outputs are not locked on failed send with arguments.
+			let args = InitTxArgs {
+				src_acct_name: Some("mining".to_owned()),
+				amount,
+				minimum_confirmations: 2,
+				max_outputs: 500,
+				num_change_outputs: 1,
+				selection_strategy_is_use_all: false,
+				late_lock: Some(true),
+				send_args: Some(InitTxSendArgs {
+					dest: "tgrin1xtxavwfgs48ckf3gk8wwgcndmn0nt4tvkl8a7ltyejjcy2mc6nfs9gm2lp".into(),
+					post_tx: false,
+					fluff: false,
+					skip_tor: Some(false),
+				}),
+				..Default::default()
+			};
+			let err = api.init_send_tx(m, args).err();
+			assert!(err.is_some());
+			// Make sure spendable balance not changed.
+			assert_eq!(560_000_000_000, wallet_info.amount_currently_spendable);
+
 			Ok(())
 		},
 	)?;
