@@ -545,6 +545,10 @@ where
 	C: NodeClient,
 	K: Keychain,
 {
+	if args.amount == 0 {
+		return Err(Error::InvalidAmount);
+	}
+
 	let payment_proof_address = if let Some(a) = &args.payment_proof_recipient_address {
 		if a.valid_network() {
 			Some(a)
@@ -668,6 +672,10 @@ where
 	C: NodeClient,
 	K: Keychain,
 {
+	if args.amount == 0 {
+		return Err(Error::InvalidAmount);
+	}
+
 	let parent_key_id = match args.dest_acct_name {
 		Some(d) => {
 			let pm = w.get_acct_path(d)?;
@@ -721,6 +729,10 @@ where
 	C: NodeClient,
 	K: Keychain,
 {
+	if slate.amount == 0 {
+		return Err(Error::InvalidAmount);
+	}
+
 	let mut ret_slate = slate.clone();
 	check_ttl(w, &ret_slate)?;
 	let parent_key_id = match args.src_acct_name {
