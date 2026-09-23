@@ -73,7 +73,8 @@ pub trait OwnerRpc {
 				{
 					"label": "default",
 					"path": "0200000000000000000000000000000000",
-					"info": null
+					"info": null,
+					"current": true
 				}
 			]
 		},
@@ -122,7 +123,8 @@ pub trait OwnerRpc {
 						 "last_confirmed_height": "4",
 						 "minimum_confirmations": "1",
 						 "total": "240000000000"
-					   }
+					},
+					"current": true
 				}
 			]
 		},
