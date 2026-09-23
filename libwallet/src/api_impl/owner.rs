@@ -71,7 +71,7 @@ where
 	Ok(accounts)
 }
 
-/// new account path
+/// New account path
 pub fn create_account_path<C, K>(
 	w: &mut WalletBackend<C, K>,
 	keychain_mask: Option<&SecretKey>,
@@ -84,13 +84,17 @@ where
 	keys::new_acct_path(w, keychain_mask, label)
 }
 
-/// set active account
-pub fn set_active_account<C, K>(w: &mut WalletBackend<C, K>, label: &str) -> Result<(), Error>
+/// Set active account
+pub fn set_active_account<C, K>(
+	w: &mut WalletBackend<C, K>,
+	keychain_mask: Option<&SecretKey>,
+	label: &str,
+) -> Result<(), Error>
 where
 	C: NodeClient,
 	K: Keychain,
 {
-	w.set_parent_key_id_by_name(label)
+	w.set_active_account(keychain_mask, label)
 }
 
 /// Hash of the wallet root public key

@@ -411,7 +411,7 @@ where
 		let w = w_lock.lc_provider()?.wallet_inst()?;
 		// Test keychain mask, to keep API consistent
 		let _ = w.keychain(keychain_mask)?;
-		owner::set_active_account(w, label)
+		owner::set_active_account(w, keychain_mask, label)
 	}
 
 	/// Returns a list of outputs from the active account in the wallet.

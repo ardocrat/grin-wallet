@@ -559,6 +559,10 @@ fn command_line_test_impl(test_dir: &str) -> Result<(), grin_wallet_controller::
 	];
 	execute_command(&app, test_dir, "wallet1", &client1, arg_vec)?;
 
+	// set default account for wallet2
+	let arg_vec = vec!["grin-wallet", "-p", "password2", "account", "-a", "default"];
+	execute_command(&app, test_dir, "wallet2", &client2, arg_vec)?;
+
 	// issue an invoice tx, wallet 2
 	let arg_vec = vec!["grin-wallet", "-p", "password2", "invoice", "65"];
 	execute_command(&app, test_dir, "wallet2", &client2, arg_vec)?;

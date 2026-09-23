@@ -125,20 +125,20 @@ fn accounts_test_impl(test_dir: &'static str) -> Result<(), libwallet::Error> {
 	// Default wallet 2 to listen on that account
 	{
 		wallet_inst!(wallet2, w);
-		w.set_parent_key_id_by_name("listener_account")?;
+		w.set_account_by_name("listener_account")?;
 	}
 
 	// Mine into two different accounts in the same wallet
 	{
 		wallet_inst!(wallet1, w);
-		w.set_parent_key_id_by_name("account1")?;
+		w.set_account_by_name("account1")?;
 		assert_eq!(w.parent_key_id(), ExtKeychain::derive_key_id(2, 1, 0, 0, 0));
 	}
 	let _ = test_framework::award_blocks_to_wallet(&chain, wallet1.clone(), mask1, 7, false);
 
 	{
 		wallet_inst!(wallet1, w);
-		w.set_parent_key_id_by_name("account2")?;
+		w.set_account_by_name("account2")?;
 		assert_eq!(w.parent_key_id(), ExtKeychain::derive_key_id(2, 2, 0, 0, 0));
 	}
 	let _ = test_framework::award_blocks_to_wallet(&chain, wallet1.clone(), mask1, 5, false);
@@ -167,7 +167,7 @@ fn accounts_test_impl(test_dir: &'static str) -> Result<(), libwallet::Error> {
 		// let lc = w_lock.lc_provider()?;
 		// let w = lc.wallet_inst()?;
 		wallet_inst!(wallet1, w);
-		w.set_parent_key_id_by_name("account1")?;
+		w.set_account_by_name("account1")?;
 	}
 
 	wallet::controller::owner_single_use(
@@ -211,7 +211,7 @@ fn accounts_test_impl(test_dir: &'static str) -> Result<(), libwallet::Error> {
 	// should be nothing in default account
 	{
 		wallet_inst!(wallet1, w);
-		w.set_parent_key_id_by_name("default")?;
+		w.set_account_by_name("default")?;
 	}
 	wallet::controller::owner_single_use(
 		wallet1.clone(),
@@ -235,7 +235,7 @@ fn accounts_test_impl(test_dir: &'static str) -> Result<(), libwallet::Error> {
 	// Send a tx to another wallet
 	{
 		wallet_inst!(wallet1, w);
-		w.set_parent_key_id_by_name("account1")?;
+		w.set_account_by_name("account1")?;
 	}
 	wallet::controller::owner_single_use(
 		wallet1.clone(),
@@ -286,7 +286,7 @@ fn accounts_test_impl(test_dir: &'static str) -> Result<(), libwallet::Error> {
 	// other account should be untouched
 	{
 		wallet_inst!(wallet1, w);
-		w.set_parent_key_id_by_name("account2")?;
+		w.set_account_by_name("account2")?;
 	}
 	wallet::controller::owner_single_use(
 		wallet1.clone(),
@@ -321,7 +321,7 @@ fn accounts_test_impl(test_dir: &'static str) -> Result<(), libwallet::Error> {
 	// Default account on wallet 2 should be untouched
 	{
 		wallet_inst!(wallet2, w);
-		w.set_parent_key_id_by_name("default")?;
+		w.set_account_by_name("default")?;
 	}
 	wallet::controller::owner_single_use(
 		wallet2.clone(),

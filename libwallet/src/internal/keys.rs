@@ -68,7 +68,7 @@ where
 	K: Keychain,
 {
 	let label = label.to_owned();
-	if wallet.acct_path_iter()?.any(|l| l.label == label) {
+	if wallet.acct_path_iter()?.any(|a| a.label == label) {
 		return Err(Error::AccountLabelAlreadyExists(label));
 	}
 
@@ -94,6 +94,7 @@ where
 		label,
 		path: return_id.clone(),
 		info: None,
+		current: None,
 	};
 
 	let mut batch = wallet.batch(keychain_mask)?;
@@ -118,6 +119,7 @@ where
 		label,
 		path: path.clone(),
 		info: None,
+		current: None,
 	};
 
 	let mut batch = wallet.batch(keychain_mask)?;

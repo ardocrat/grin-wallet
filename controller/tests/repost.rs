@@ -101,7 +101,7 @@ fn file_repost_test_impl(test_dir: &'static str) -> Result<(), libwallet::Error>
 	// Get some mining done
 	{
 		wallet_inst!(wallet1, w);
-		w.set_parent_key_id_by_name("mining")?;
+		w.set_account_by_name("mining")?;
 	}
 	let mut bh = 10u64;
 	let _ =
@@ -145,7 +145,7 @@ fn file_repost_test_impl(test_dir: &'static str) -> Result<(), libwallet::Error>
 	// wallet 1 receives file to different account, completes
 	{
 		wallet_inst!(wallet1, w);
-		w.set_parent_key_id_by_name("listener")?;
+		w.set_account_by_name("listener")?;
 	}
 
 	wallet::controller::foreign_single_use(
@@ -163,7 +163,7 @@ fn file_repost_test_impl(test_dir: &'static str) -> Result<(), libwallet::Error>
 	// wallet 1 receives file to different account, completes
 	{
 		wallet_inst!(wallet1, w);
-		w.set_parent_key_id_by_name("mining")?;
+		w.set_account_by_name("mining")?;
 	}
 
 	// wallet 1 finalize
@@ -213,7 +213,7 @@ fn file_repost_test_impl(test_dir: &'static str) -> Result<(), libwallet::Error>
 
 	{
 		wallet_inst!(wallet1, w);
-		w.set_parent_key_id_by_name("listener")?;
+		w.set_account_by_name("listener")?;
 	}
 
 	wallet::controller::owner_single_use(
@@ -232,11 +232,11 @@ fn file_repost_test_impl(test_dir: &'static str) -> Result<(), libwallet::Error>
 	// as above, but syncronously
 	{
 		wallet_inst!(wallet1, w);
-		w.set_parent_key_id_by_name("mining")?;
+		w.set_account_by_name("mining")?;
 	}
 	{
 		wallet_inst!(wallet2, w);
-		w.set_parent_key_id_by_name("account1")?;
+		w.set_account_by_name("account1")?;
 	}
 
 	let mut slate = Slate::blank(2, false);

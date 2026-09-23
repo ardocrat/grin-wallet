@@ -21,7 +21,6 @@ args:
       short: a
       long: account
       takes_value: true
-      default_value: default
   - top_level_dir:
       help: Top directory in which wallet files are stored (location of 'grin-wallet.toml')
       short: t
@@ -53,6 +52,11 @@ subcommands:
             short: m
             long: min_conf
             default_value: "10"
+            takes_value: true
+        - active:
+            help: Set active account by provided name
+            short: a
+            long: active
             takes_value: true
   - rewind_hash:
       about: Return the hash of the wallet root public key.
