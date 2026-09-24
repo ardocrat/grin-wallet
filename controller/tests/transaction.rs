@@ -33,6 +33,8 @@ use std::time::Duration;
 
 mod common;
 use common::{clean_output_dir, create_wallet_proxy, setup};
+use grin_wallet_api::Owner;
+use libwallet::InitTxSendArgs;
 
 /// Exercises the Transaction API fully with a test NodeClient operating
 /// directly on a chain instance
@@ -424,6 +426,58 @@ fn basic_transaction_api(test_dir: &'static str) -> Result<(), libwallet::Error>
 		assert!(res.is_err());
 	}
 
+	// Multiple send attempts, make sure same outputs not locked.
+	let mut handles = vec![];
+
+	let api2_1 = Owner::new(api2.wallet_inst.clone(), None, api2.config_path());
+	handles.push(thread::spawn(move || {
+		let args = InitTxArgs {
+			src_acct_name: None,
+			minimum_confirmations: 2,
+			max_outputs: 500,
+			num_change_outputs: 1,
+			selection_strategy_is_use_all: true,
+			amount: 1,
+			send_args: Some(InitTxSendArgs {
+				dest: "tgrin1xtxavwfgs48ckf3gk8wwgcndmn0nt4tvkl8a7ltyejjcy2mc6nfs9gm2lp".into(),
+				post_tx: false,
+				fluff: false,
+				skip_tor: Some(false),
+			}),
+			..Default::default()
+		};
+		api2_1.init_send_tx(None, args)
+	}));
+	let api2_2 = Owner::new(api2.wallet_inst.clone(), None, api2.config_path());
+	handles.push(thread::spawn(move || {
+		let args = InitTxArgs {
+			src_acct_name: None,
+			minimum_confirmations: 2,
+			max_outputs: 500,
+			num_change_outputs: 1,
+			selection_strategy_is_use_all: true,
+			amount: 1,
+			send_args: Some(InitTxSendArgs {
+				dest: "tgrin1xtxavwfgs48ckf3gk8wwgcndmn0nt4tvkl8a7ltyejjcy2mc6nfs9gm2lp".into(),
+				post_tx: false,
+				fluff: false,
+				skip_tor: Some(false),
+			}),
+			..Default::default()
+		};
+		api2_2.init_send_tx(None, args)
+	}));
+	let results: Vec<_> = handles
+		.into_iter()
+		.map(|handle| handle.join().unwrap())
+		.collect();
+	assert_eq!(results.iter().filter(|r| { r.is_ok() }).count(), 1);
+	let err_res = results.iter().find(|r| r.is_err()).unwrap();
+	assert!(matches!(
+		err_res.as_ref().err().unwrap(),
+		libwallet::Error::NotEnoughFunds { .. }
+	));
+
 	// try to build a transaction with amount inclusive of fees. Confirm that tx
 	// amount + fee is equal to the originally specified amount
 	let amount = 60_000_000_000;
@@ -431,7 +485,7 @@ fn basic_transaction_api(test_dir: &'static str) -> Result<(), libwallet::Error>
 		// note this will increment the block count as part of the transaction "Posting"
 		let args = InitTxArgs {
 			src_acct_name: None,
-			amount: amount,
+			amount,
 			amount_includes_fee: Some(true),
 			minimum_confirmations: 2,
 			max_outputs: 500,
