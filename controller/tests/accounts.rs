@@ -145,6 +145,8 @@ fn accounts_test_impl(test_dir: &'static str) -> Result<(), libwallet::Error> {
 	}
 
 	{
+		let labels: Vec<_> = api1.accounts(mask1)?.into_iter().map(|a| a.label).collect();
+		assert_eq!(labels, ["account1", "default", "account2", "account3"]);
 		// check last confirmed height on this account is different from above (should be 0)
 		let (_, wallet1_info) = api1.retrieve_summary_info(mask1, false, 1)?;
 		assert_eq!(wallet1_info.last_confirmed_height, 0);

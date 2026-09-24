@@ -57,7 +57,11 @@ where
 	C: NodeClient,
 	K: Keychain,
 {
-	keys::accounts(w)
+	let mut accounts = keys::accounts(w)?;
+	accounts.sort_by(|a, b| a.path.cmp(&b.path));
+	// Put active account on top.
+	accounts.sort_by_key(|k| k.path != w.parent_key_id());
+	Ok(accounts)
 }
 
 /// new account path
@@ -530,6 +534,10 @@ where
 	C: NodeClient,
 	K: Keychain,
 {
+	if args.amount == 0 {
+		return Err(Error::InvalidAmount);
+	}
+
 	let payment_proof_address = if let Some(a) = &args.payment_proof_recipient_address {
 		if a.valid_network() {
 			Some(a)
@@ -653,6 +661,10 @@ where
 	C: NodeClient,
 	K: Keychain,
 {
+	if args.amount == 0 {
+		return Err(Error::InvalidAmount);
+	}
+
 	let parent_key_id = match args.dest_acct_name {
 		Some(d) => {
 			let pm = w.get_acct_path(d)?;
@@ -706,6 +718,10 @@ where
 	C: NodeClient,
 	K: Keychain,
 {
+	if slate.amount == 0 {
+		return Err(Error::InvalidAmount);
+	}
+
 	let mut ret_slate = slate.clone();
 	check_ttl(w, &ret_slate)?;
 	let parent_key_id = match args.src_acct_name {
@@ -826,6 +842,9 @@ where
 	K: Keychain,
 {
 	let context = w.get_private_context(keychain_mask, slate.id.as_bytes())?;
+	if slate.state == SlateState::Invoice2 && context.input_ids.is_empty() {
+		return Err(Error::SlateState);
+	}
 	let mut excess_override = None;
 
 	let mut sl = slate.clone();

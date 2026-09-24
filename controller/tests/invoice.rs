@@ -92,6 +92,17 @@ fn invoice_tx_impl(test_dir: &'static str) -> Result<(), libwallet::Error> {
 	assert_eq!(wallet1_info.last_confirmed_height, _bh);
 	assert_eq!(wallet1_info.total, _bh * reward);
 
+	let error = api2
+		.issue_invoice_tx(
+			mask2,
+			IssueInvoiceTxArgs {
+				amount: 0,
+				..Default::default()
+			},
+		)
+		.unwrap_err();
+	assert_eq!(error, libwallet::Error::InvalidAmount);
+
 	// Wallet 2 initiates an invoice transaction, requesting payment
 	let args = IssueInvoiceTxArgs {
 		amount: reward * 2,
@@ -140,9 +151,24 @@ fn invoice_tx_impl(test_dir: &'static str) -> Result<(), libwallet::Error> {
 		selection_strategy_is_use_all: true,
 		..Default::default()
 	};
+	let mut zero_amount_slate = slate.clone();
+	zero_amount_slate.amount = 0;
+	assert_eq!(
+		api1.process_invoice_tx(mask1, &zero_amount_slate, args.clone())
+			.unwrap_err(),
+		libwallet::Error::InvalidAmount
+	);
 	slate = api1.process_invoice_tx(mask1, &slate, args)?;
 	api1.tx_lock_outputs(mask1, &slate)?;
 	assert_eq!(slate.state, SlateState::Invoice2);
+
+	assert_eq!(
+		api2.tx_lock_outputs(mask2, &slate),
+		Err(libwallet::Error::SlateState)
+	);
+	let (_, txs) = api2.retrieve_txs(mask2, false, None, None, None)?;
+	assert_eq!(txs.len(), 1);
+	assert_eq!(txs[0].tx_type, libwallet::TxLogEntryType::TxReceived);
 
 	// wallet 2 finalizes and posts
 	wallet::controller::foreign_single_use(
