@@ -2360,7 +2360,7 @@ where
 	///
 	/// * `keychain_mask` - Wallet secret mask to XOR against the stored wallet seed before using, if
 	/// * `slatepack` - A string representing an armored slatepack
-	/// * `secret_indices` - Indices along this wallet's deriviation path with which to attempt
+	/// * `secret_indices` - Indices along this wallet's derivation path with which to attempt
 	/// decryption. This function will attempt to use secret keys at each index along this path
 	/// to attempt to decrypt the payload, returning an error if none of the keys match.
 	///

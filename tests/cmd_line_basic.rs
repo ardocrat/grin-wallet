@@ -21,7 +21,6 @@ extern crate log;
 extern crate grin_wallet;
 
 use grin_wallet_impls::test_framework::{self, LocalWalletClient, WalletProxy};
-use std::path::PathBuf;
 
 use clap::App;
 use std::thread;
@@ -32,6 +31,7 @@ use grin_wallet_impls::DefaultLCProvider;
 
 mod common;
 use common::{clean_output_dir, execute_command, initial_setup_wallet, instantiate_wallet, setup};
+use grin_wallet_api::Owner;
 
 /// command line tests
 fn command_line_test_impl(test_dir: &str) -> Result<(), grin_wallet_controller::Error> {
@@ -153,15 +153,9 @@ fn command_line_test_impl(test_dir: &str) -> Result<(), grin_wallet_controller::
 	let (wallet1, mask1_i) =
 		instantiate_wallet(wallet_config1, client1.clone(), "password1", "default")?;
 	let mask1 = (&mask1_i).as_ref();
-	grin_wallet_controller::controller::owner_single_use(
-		wallet1.clone(),
-		mask1,
-		PathBuf::from(test_dir),
-		|api, m| {
-			api.set_active_account(m, "mining")?;
-			Ok(())
-		},
-	)?;
+	let api1 = Owner::new(wallet1.clone(), None, config1.config_file_path.clone());
+
+	api1.set_active_account(mask1, "mining")?;
 
 	let mut bh = 10u64;
 	let _ =
@@ -231,23 +225,16 @@ fn command_line_test_impl(test_dir: &str) -> Result<(), grin_wallet_controller::
 		"default",
 	)?;
 	let mask1 = (&mask1_i).as_ref();
+	let api1 = Owner::new(wallet1.clone(), None, config1.config_file_path.clone());
 
 	// Check our transaction log, should have 10 entries
-	grin_wallet_controller::controller::owner_single_use(
-		wallet1.clone(),
-		mask1,
-		PathBuf::from(test_dir),
-		|api, m| {
-			api.set_active_account(m, "mining")?;
-			let (refreshed, txs) = api.retrieve_txs(m, true, None, None, None)?;
-			assert!(refreshed);
-			assert_eq!(txs.len(), bh as usize);
-			for t in txs {
-				assert!(t.kernel_excess.is_some());
-			}
-			Ok(())
-		},
-	)?;
+	api1.set_active_account(mask1, "mining")?;
+	let (refreshed, txs) = api1.retrieve_txs(mask1, true, None, None, None)?;
+	assert!(refreshed);
+	assert_eq!(txs.len(), bh as usize);
+	for t in txs {
+		assert!(t.kernel_excess.is_some());
+	}
 
 	let _ = test_framework::award_blocks_to_wallet(&chain, wallet1.clone(), mask1, 10, false);
 	bh += 10;
@@ -268,33 +255,17 @@ fn command_line_test_impl(test_dir: &str) -> Result<(), grin_wallet_controller::
 		"default",
 	)?;
 	let mask2 = (&mask2_i).as_ref();
+	let api2 = Owner::new(wallet2.clone(), None, config2.config_file_path.clone());
 
-	grin_wallet_controller::controller::owner_single_use(
-		wallet2.clone(),
-		mask2,
-		PathBuf::from(test_dir),
-		|api, m| {
-			api.set_active_account(m, "account_1")?;
-			let (_, wallet1_info) = api.retrieve_summary_info(m, true, 1)?;
-			assert_eq!(wallet1_info.last_confirmed_height, bh);
-			assert_eq!(wallet1_info.amount_currently_spendable, 10_000_000_000);
-			Ok(())
-		},
-	)?;
+	api2.set_active_account(mask2, "account_1")?;
+	let (_, wallet1_info) = api2.retrieve_summary_info(mask2, true, 1)?;
+	assert_eq!(wallet1_info.last_confirmed_height, bh);
+	assert_eq!(wallet1_info.amount_currently_spendable, 10_000_000_000);
 
 	// Send to wallet 2 with --amount_includes_fee
-	let mut old_balance = 0;
-	grin_wallet_controller::controller::owner_single_use(
-		wallet1.clone(),
-		mask1,
-		PathBuf::from(test_dir),
-		|api, m| {
-			api.set_active_account(m, "mining")?;
-			let (_, wallet1_info) = api.retrieve_summary_info(m, true, 1)?;
-			old_balance = wallet1_info.amount_currently_spendable;
-			Ok(())
-		},
-	)?;
+	api1.set_active_account(mask1, "mining")?;
+	let (_, wallet1_info) = api1.retrieve_summary_info(mask1, true, 1)?;
+	let old_balance = wallet1_info.amount_currently_spendable;
 	let arg_vec = vec![
 		"grin-wallet",
 		"-p",
@@ -344,22 +315,14 @@ fn command_line_test_impl(test_dir: &str) -> Result<(), grin_wallet_controller::
 
 	// Check the new balance of wallet 1 reduced by EXACTLY the tx amount (instead of amount + fee)
 	// This confirms that the TX amount was correctly computed to allow for the fee
-	grin_wallet_controller::controller::owner_single_use(
-		wallet1.clone(),
-		mask1,
-		PathBuf::from(test_dir),
-		|api, m| {
-			api.set_active_account(m, "mining")?;
-			let (_, wallet1_info) = api.retrieve_summary_info(m, true, 1)?;
-			// make sure the new balance is exactly equal to the old balance - the tx amount + the amount mined since then
-			let amt_mined = 10 * 60_000_000_000;
-			assert_eq!(
-				wallet1_info.amount_currently_spendable + 10_000_000_000,
-				old_balance + amt_mined
-			);
-			Ok(())
-		},
-	)?;
+	api1.set_active_account(mask1, "mining")?;
+	let (_, wallet1_info) = api1.retrieve_summary_info(mask1, true, 1)?;
+	// make sure the new balance is exactly equal to the old balance - the tx amount + the amount mined since then
+	let amt_mined = 10 * 60_000_000_000;
+	assert_eq!(
+		wallet1_info.amount_currently_spendable + 10_000_000_000,
+		old_balance + amt_mined
+	);
 
 	// Send encrypted from wallet 1 to wallet 2
 	// output wallet 2's address for test creation purposes,
@@ -430,19 +393,12 @@ fn command_line_test_impl(test_dir: &str) -> Result<(), grin_wallet_controller::
 		"default",
 	)?;
 	let mask1 = (&mask1_i).as_ref();
+	let api1 = Owner::new(wallet1.clone(), None, config1.config_file_path.clone());
 
-	grin_wallet_controller::controller::owner_single_use(
-		wallet1.clone(),
-		mask1,
-		PathBuf::from(test_dir),
-		|api, m| {
-			api.set_active_account(m, "mining")?;
-			let (refreshed, txs) = api.retrieve_txs(m, true, None, None, None)?;
-			assert!(refreshed);
-			assert_eq!(txs.len(), bh as usize);
-			Ok(())
-		},
-	)?;
+	api1.set_active_account(mask1, "mining")?;
+	let (refreshed, txs) = api1.retrieve_txs(mask1, true, None, None, None)?;
+	assert!(refreshed);
+	assert_eq!(txs.len(), bh as usize);
 
 	// Send to self
 	let arg_vec = vec![
@@ -503,19 +459,12 @@ fn command_line_test_impl(test_dir: &str) -> Result<(), grin_wallet_controller::
 		"default",
 	)?;
 	let mask1 = (&mask1_i).as_ref();
+	let api1 = Owner::new(wallet1.clone(), None, config1.config_file_path.clone());
 
-	grin_wallet_controller::controller::owner_single_use(
-		wallet1.clone(),
-		mask1,
-		PathBuf::from(test_dir),
-		|api, m| {
-			api.set_active_account(m, "mining")?;
-			let (refreshed, txs) = api.retrieve_txs(m, true, None, None, None)?;
-			assert!(refreshed);
-			assert_eq!(txs.len(), bh as usize + 1);
-			Ok(())
-		},
-	)?;
+	api1.set_active_account(mask1, "mining")?;
+	let (refreshed, txs) = api1.retrieve_txs(mask1, true, None, None, None)?;
+	assert!(refreshed);
+	assert_eq!(txs.len(), bh as usize + 1);
 
 	// Another file exchange, don't send, but unlock with repair command
 	let arg_vec = vec![
@@ -644,24 +593,15 @@ fn command_line_test_impl(test_dir: &str) -> Result<(), grin_wallet_controller::
 	execute_command(&app, test_dir, "wallet2", &client2, arg_vec)?;
 
 	// get tx output via -tx parameter
-	let mut tx_id = "".to_string();
-	grin_wallet_controller::controller::owner_single_use(
-		wallet2.clone(),
-		mask2,
-		PathBuf::from(test_dir),
-		|api, m| {
-			api.set_active_account(m, "default")?;
-			let (_, txs) = api.retrieve_txs(m, true, None, None, None)?;
-			let some_tx_id = txs[0].tx_slate_id.clone();
-			assert!(some_tx_id.is_some());
-			tx_id = some_tx_id.unwrap().to_string().clone();
-			Ok(())
-		},
-	)?;
+	api2.set_active_account(mask2, "default")?;
+	let (_, txs) = api2.retrieve_txs(mask2, true, None, None, None)?;
+	let some_tx_id = txs[0].tx_slate_id.clone();
+	assert!(some_tx_id.is_some());
+	let tx_id = some_tx_id.unwrap().to_string().clone();
 	let arg_vec = vec!["grin-wallet", "-p", "password2", "txs", "-t", &tx_id[..]];
 	execute_command(&app, test_dir, "wallet2", &client2, arg_vec)?;
 
-	// bit of mining
+	// a bit of mining
 	let _ = test_framework::award_blocks_to_wallet(&chain, wallet1.clone(), mask1, 10, false);
 
 	// Test wallet sweep
@@ -712,35 +652,18 @@ fn command_line_test_impl(test_dir: &str) -> Result<(), grin_wallet_controller::
 	// Check wallet 1 is now empty, except for immature coinbase outputs from recent mining),
 	// and recently matured coinbase outputs, which were not mature at time of spending.
 	// This confirms that the TX amount was correctly computed to allow for the fee
-	grin_wallet_controller::controller::owner_single_use(
-		wallet1.clone(),
-		mask1,
-		PathBuf::from(test_dir),
-		|api, m| {
-			api.set_active_account(m, "mining")?;
-			let (_, wallet1_info) = api.retrieve_summary_info(m, true, 10)?;
-			// Entire 'spendable' wallet balance should have been swept, except the coinbase outputs
-			// which matured in the last batch of mining. Check that the new spendable balance is
-			// exactly equal to those matured coins.
-			let amt_mined = 10 * 60_000_000_000;
-			assert_eq!(wallet1_info.amount_currently_spendable, amt_mined);
-			Ok(())
-		},
-	)?;
+	api1.set_active_account(mask1, "mining")?;
+	let (_, wallet1_info) = api1.retrieve_summary_info(mask1, true, 10)?;
+	// Entire 'spendable' wallet balance should have been swept, except the coinbase outputs
+	// which matured in the last batch of mining. Check that the new spendable balance is
+	// exactly equal to those matured coins.
+	let amt_mined = 10 * 60_000_000_000;
+	assert_eq!(wallet1_info.amount_currently_spendable, amt_mined);
 
 	// Failed send, with --late-lock, make sure outputs not locked (amount not changed).
-	let mut old_balance = 0;
-	grin_wallet_controller::controller::owner_single_use(
-		wallet2.clone(),
-		mask2,
-		PathBuf::from(test_dir),
-		|api, m| {
-			api.set_active_account(m, "account_1")?;
-			let (_, wallet1_info) = api.retrieve_summary_info(m, true, 1)?;
-			old_balance = wallet1_info.amount_currently_spendable;
-			Ok(())
-		},
-	)?;
+	api2.set_active_account(mask2, "account_1")?;
+	let (_, wallet1_info) = api2.retrieve_summary_info(mask2, true, 1)?;
+	let old_balance = wallet1_info.amount_currently_spendable;
 	let arg_vec = vec![
 		"grin-wallet",
 		"-p",
@@ -754,17 +677,9 @@ fn command_line_test_impl(test_dir: &str) -> Result<(), grin_wallet_controller::
 		"--late-lock",
 	];
 	execute_command(&app, test_dir, "wallet2", &client2, arg_vec)?;
-	grin_wallet_controller::controller::owner_single_use(
-		wallet2.clone(),
-		mask2,
-		PathBuf::from(test_dir),
-		|api, m| {
-			api.set_active_account(m, "account_1")?;
-			let (_, wallet1_info) = api.retrieve_summary_info(m, true, 1)?;
-			assert_eq!(old_balance, wallet1_info.amount_currently_spendable);
-			Ok(())
-		},
-	)?;
+	api2.set_active_account(mask2, "account_1")?;
+	let (_, wallet1_info) = api2.retrieve_summary_info(mask2, true, 1)?;
+	assert_eq!(old_balance, wallet1_info.amount_currently_spendable);
 
 	// let logging finish
 	thread::sleep(Duration::from_millis(200));

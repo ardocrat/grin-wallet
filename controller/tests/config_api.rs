@@ -21,9 +21,9 @@ use config::config::{get_global_config, reload_global_config};
 use config::GlobalWalletConfig;
 use impls::test_framework::LocalWalletClient;
 use libwallet::{InitTxArgs, InitTxSendArgs};
-use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::Ordering;
+use std::{env, fs};
 
 mod common;
 use common::{clean_output_dir, create_wallet_proxy, setup};
@@ -63,7 +63,8 @@ fn tor_disable() {
 		"wallet",
 		None,
 		&mut wallet_proxy,
-		false
+		false,
+		_api
 	);
 	let path = PathBuf::from(test_dir).join("grin-wallet.toml");
 	let mut config =
@@ -113,7 +114,8 @@ fn send_preflight() {
 		"wallet",
 		None,
 		&mut wallet_proxy,
-		false
+		false,
+		_api
 	);
 	let owner = api::Owner::new(
 		wallet.clone(),
@@ -163,9 +165,13 @@ fn directory_change() {
 		"wallet",
 		None,
 		&mut wallet_proxy,
-		false
+		false,
+		_api
 	);
-	let old_dir = PathBuf::from(test_dir).join("wallet");
+	let old_dir = env::current_dir().unwrap_or_else(|e| {
+		panic!("Error creating config file: {}", e);
+	});
+	let old_dir = old_dir.join(test_dir).join("wallet");
 	let old_config = old_dir.join("grin-wallet.toml");
 	let new_dir = PathBuf::from(test_dir).join("other");
 	let owner = api::Owner::new(wallet.clone(), None, old_config.clone());
