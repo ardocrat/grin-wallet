@@ -710,9 +710,9 @@ where
 	/// is confirmed. This method also returns a function that will perform that locking, and it is
 	/// up to the caller to decide the best time to call the lock function
 	/// (via the [`tx_lock_outputs`](struct.Owner.html#method.tx_lock_outputs) method).
-	/// If the exchange method is intended to be synchronous (such as via a direct http call,)
+	/// If the exchange method is intended to be synchronous (such as via a direct http call)
 	/// then the lock call can wait until the response is confirmed. If it is asynchronous, (such
-	/// as via file transfer,) the lock call should happen immediately (before the file is sent
+	/// as via file transfer) the lock call should happen immediately (before the file is sent
 	/// to the recipient).
 	///
 	/// If the `send_args` [`InitTxSendArgs`](../grin_wallet_libwallet/types/struct.InitTxSendArgs.html),
@@ -720,7 +720,7 @@ where
 	/// function will attempt to send the slate back to the sender using the slatepack sync
 	/// send (TOR). If providing this argument, check the `state` field of the slate to see if the
 	/// sync_send was successful (it should be S2 if the sync sent successfully). It will also post
-	/// the transction if the `post_tx` field is set.
+	/// the transaction if the `post_tx` field is set.
 	///
 	/// # Arguments
 	/// * `keychain_mask` - Wallet secret mask to XOR against the stored wallet seed before using, if
@@ -731,11 +731,11 @@ where
 	/// # Returns
 	/// * a result containing:
 	/// * The transaction [Slate](../grin_wallet_libwallet/slate/struct.Slate.html),
-	/// which can be forwarded to the recieving party by any means. Once the caller is relatively
+	/// which can be forwarded to the receiving party by any means. Once the caller is relatively
 	/// certain that the transaction has been sent to the recipient, the associated wallet
 	/// transaction outputs should be locked via a call to
-	/// [`tx_lock_outputs`](struct.Owner.html#method.tx_lock_outputs). This must be called before calling
-	/// [`finalize_tx`](struct.Owner.html#method.finalize_tx).
+	/// [`tx_lock_outputs`](struct.Owner.html#method.tx_lock_outputs) if slate was send manually.
+	/// This must be called before calling [`finalize_tx`](struct.Owner.html#method.finalize_tx).
 	/// * or [`libwallet::Error`](../grin_wallet_libwallet/struct.Error.html) if an error is encountered.
 	///
 	/// # Remarks
