@@ -27,7 +27,7 @@ use term;
 
 /// Display outputs in a pretty way
 pub fn outputs(
-	account: &String,
+	account: &str,
 	cur_height: u64,
 	validated: bool,
 	outputs: Vec<OutputCommitMapping>,
@@ -127,7 +127,7 @@ pub fn outputs(
 
 /// Display transaction log in a pretty way
 pub fn txs(
-	account: &String,
+	account: &str,
 	cur_height: u64,
 	validated: bool,
 	txs: &[TxLogEntry],
@@ -390,7 +390,7 @@ pub fn view_wallet_output(
 
 /// Display summary info in a pretty way
 pub fn info(
-	account: &String,
+	account: &str,
 	wallet_info: &WalletInfo,
 	validated: bool,
 	dark_background_color_scheme: bool,
