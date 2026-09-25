@@ -303,19 +303,15 @@ where
 		match res {
 			None => Err(Error::UnknownAccountLabel(label.to_string())),
 			Some(mut a) => {
-				{
-					let mut batch = self.batch(keychain_mask)?;
-					let current = batch
-						.acct_path_iter()?
-						.filter(|a| a.current.unwrap_or(false))
-						.collect::<Vec<AcctPathMapping>>();
-					for mut a in current {
-						a.current = None;
-						batch.save_acct_path(a.clone())?;
-					}
-					batch.commit()?;
-				}
 				let mut batch = self.batch(keychain_mask)?;
+				let current = batch
+					.acct_path_iter()?
+					.filter(|a| a.current.unwrap_or(false))
+					.collect::<Vec<AcctPathMapping>>();
+				for mut a in current {
+					a.current = None;
+					batch.save_acct_path(a.clone())?;
+				}
 				a.current = Some(true);
 				batch.save_acct_path(a.clone())?;
 				batch.commit()?;
