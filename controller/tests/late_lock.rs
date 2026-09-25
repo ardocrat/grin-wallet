@@ -140,6 +140,8 @@ fn late_lock_test_impl(test_dir: &'static str) -> Result<(), libwallet::Error> {
 	};
 	api1.init_send_tx(mask1, args)?;
 	// Make sure spendable balance not changed.
+	let (wallet1_refreshed, wallet_info) = api1.retrieve_summary_info(mask1, true, 1)?;
+	assert!(wallet1_refreshed);
 	assert_eq!(560_000_000_000, wallet_info.amount_currently_spendable);
 
 	let (wallet2_refreshed, wallet_info) = api2.retrieve_summary_info(mask2, true, 1)?;
