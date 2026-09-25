@@ -731,11 +731,15 @@ where
 	/// # Returns
 	/// * a result containing:
 	/// * The transaction [Slate](../grin_wallet_libwallet/slate/struct.Slate.html),
-	/// which can be forwarded to the receiving party by any means. Once the caller is relatively
-	/// certain that the transaction has been sent to the recipient, the associated wallet
-	/// transaction outputs should be locked via a call to
-	/// [`tx_lock_outputs`](struct.Owner.html#method.tx_lock_outputs) if slate was send manually.
-	/// This must be called before calling [`finalize_tx`](struct.Owner.html#method.finalize_tx).
+	/// which can be forwarded to the receiving party by any means. With normal locking, an
+	/// attempted Tor send already locks the outputs, even if sending fails. Do not call
+	/// [`tx_lock_outputs`](struct.Owner.html#method.tx_lock_outputs) again when forwarding manually.
+	/// If sending was not requested or was skipped, lock the outputs before forwarding the slate.
+	/// With late locking, outputs are locked during finalization instead.
+	/// If `skip_tor` is omitted, `skip_send_attempt` in the Tor config decides whether to send.
+	/// With normal locking, a returned S1 slate alone does not tell you whether outputs are locked.
+	/// Set `skip_tor` explicitly or check [`retrieve_txs`](struct.Owner.html#method.retrieve_txs)
+	/// for the slate ID before locking manually.
 	/// * or [`libwallet::Error`](../grin_wallet_libwallet/struct.Error.html) if an error is encountered.
 	///
 	/// # Remarks
@@ -769,7 +773,7 @@ where
 	/// if let Ok(slate) = result {
 	///     // Send slate somehow
 	///     // ...
-	///     // Lock our outputs if slate was sent manually with empty send_args
+	///     // Lock outputs for manual sending without late locking
 	///     api_owner.tx_lock_outputs(None, &slate);
 	/// }
 	/// ```

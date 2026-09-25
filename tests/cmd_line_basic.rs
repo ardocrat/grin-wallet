@@ -667,6 +667,7 @@ fn command_line_test_impl(test_dir: &str) -> Result<(), grin_wallet_controller::
 
 	// Failed send, with --late-lock, make sure outputs not locked (amount not changed).
 	api2.set_active_account(mask2, "account_1")?;
+	let (_, txs_before) = api2.retrieve_txs(mask2, false, None, None, None)?;
 	let (_, wallet1_info) = api2.retrieve_summary_info(mask2, true, 1)?;
 	let old_balance = wallet1_info.amount_currently_spendable;
 	let arg_vec = vec![
@@ -681,8 +682,17 @@ fn command_line_test_impl(test_dir: &str) -> Result<(), grin_wallet_controller::
 		"1",
 		"--late-lock",
 	];
-	execute_command(&app, test_dir, "wallet2", &client2, arg_vec)?;
+	let args = app.clone().get_matches_from(arg_vec);
+	let mut config = initial_setup_wallet(test_dir, "wallet2");
+	config.members.tor = Some(grin_wallet_config::TorConfig {
+		use_integrated: Some(false),
+		socks_proxy_addr: "invalid".into(),
+		..Default::default()
+	});
+	grin_wallet::cmd::wallet_args::wallet_command(&args, config, client2.clone(), false, |_| {})?;
 	api2.set_active_account(mask2, "account_1")?;
+	let (_, txs_after) = api2.retrieve_txs(mask2, false, None, None, None)?;
+	assert_eq!(txs_before.len(), txs_after.len());
 	let (_, wallet1_info) = api2.retrieve_summary_info(mask2, true, 1)?;
 	assert_eq!(old_balance, wallet1_info.amount_currently_spendable);
 

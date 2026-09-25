@@ -535,6 +535,12 @@ where
 		Err(e) => {
 			error!("Error sending slate sync: {}", e);
 			output_sp(owner_api, false)?;
+			if !args.late_lock {
+				println!(
+					"Outputs are locked. To unlock them, cancel with `cancel -t {}`.",
+					slate.id
+				);
+			}
 		}
 	}
 	Ok(())
