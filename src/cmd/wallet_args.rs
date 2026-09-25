@@ -441,6 +441,11 @@ pub fn parse_account_args(account_args: &ArgMatches) -> Result<command::AccountA
 		Some(s) => Some(s.to_owned()),
 	};
 
+	if create.is_some() && active.is_some() {
+		let msg = "create and active cannot both be present".to_string();
+		return Err(ParseError::ArgumentError(msg));
+	}
+
 	// minimum_confirmations
 	let min_c = parse_required(account_args, "minimum_confirmations")?;
 	let min_c = parse_u64(min_c, "minimum_confirmations")?;
