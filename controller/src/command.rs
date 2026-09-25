@@ -583,7 +583,18 @@ where
 
 	println!();
 	if !finalizing {
-		println!("Slatepack data follows. Please provide this output to the other party or cancel it manually with `cancel` command.");
+		let cancel_hint = if lock {
+			format!(
+				" or cancel it manually with `cancel -t {}` command",
+				slate.id
+			)
+		} else {
+			"".to_string()
+		};
+		println!(
+			"Slatepack data follows. Please provide this output to the other party{}.",
+			cancel_hint
+		);
 	} else {
 		println!("Slatepack data follows.");
 	}
