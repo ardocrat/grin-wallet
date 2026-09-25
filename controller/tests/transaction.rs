@@ -427,6 +427,12 @@ fn basic_transaction_api(test_dir: &'static str) -> Result<(), libwallet::Error>
 	}
 
 	// Multiple send attempts, make sure same outputs not locked.
+	// Fail sending without starting Tor
+	api2.set_tor_config(Some(grin_wallet_config::TorConfig {
+		use_integrated: Some(false),
+		socks_proxy_addr: "invalid".into(),
+		..Default::default()
+	}))?;
 	let mut handles = vec![];
 
 	let api2_1 = Owner::new(api2.wallet_inst.clone(), None, api2.config_path());

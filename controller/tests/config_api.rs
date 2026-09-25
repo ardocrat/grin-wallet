@@ -95,6 +95,7 @@ fn tor_disable() {
 	);
 	assert_eq!(cached, stored);
 
+	drop(_api);
 	drop(owner);
 	drop(wallet);
 	drop(wallet_proxy);
@@ -146,6 +147,7 @@ fn send_preflight() {
 	assert!(after_txs.is_empty());
 	assert_eq!(snapshot(&wallet_data), before_data);
 
+	drop(_api);
 	drop(owner);
 	drop(wallet);
 	drop(wallet_proxy);
