@@ -365,7 +365,8 @@ where
 	}
 
 	/// Sets the wallet's currently active account. This sets the
-	/// BIP32 parent path used for most key-derivation operations.
+	/// BIP32 parent path used for most key-derivation operations
+	/// persistently between wallet restarts.
 	///
 	/// # Arguments
 	/// * `keychain_mask` - Wallet secret mask to XOR against the stored wallet seed before using, if
