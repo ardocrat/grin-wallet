@@ -26,6 +26,8 @@ use grin_core as core;
 use grin_util as util;
 use grin_wallet::cmd;
 use grin_wallet_config as config;
+use grin_wallet_config::config::get_wallet_path;
+use grin_wallet_config::GRIN_WALLET_DIR;
 use grin_wallet_impls::HTTPNodeClient;
 use std::env;
 use std::path::PathBuf;
@@ -109,6 +111,18 @@ fn real_main() -> i32 {
 				current_dir = Some(env::current_dir().unwrap_or_else(|e| {
 					panic!("Error creating config file: {}", e);
 				}));
+			}
+			// Check existing wallet directory on init.
+			match get_wallet_path(&chain_type, false) {
+				Ok(path) => {
+					let mut data_dir = path.clone();
+					data_dir.push(GRIN_WALLET_DIR);
+					if path.exists() && data_dir.exists() {
+						println!("Unable to initialize the wallet, please delete existing wallet directory: {}.", data_dir.display());
+						return 0;
+					}
+				}
+				Err(_) => {}
 			}
 			create_path = true;
 		}
