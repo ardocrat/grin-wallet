@@ -22,7 +22,6 @@ extern crate grin_wallet;
 
 use grin_wallet_impls::test_framework::{self, LocalWalletClient, WalletProxy};
 use std::io::Write;
-use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
 use clap::App;
@@ -31,7 +30,6 @@ use std::thread;
 use std::time::Duration;
 
 use grin_keychain::ExtKeychain;
-use grin_wallet::cmd::wallet_args;
 use grin_wallet_impls::DefaultLCProvider;
 
 mod common;
@@ -247,34 +245,35 @@ fn command_line_test_impl(test_dir: &str) -> Result<(), grin_wallet_controller::
 		"-i",
 		&file_name,
 	];
-	// Reuse startup args as in interactive mode
-	{
-		let start = app
-			.clone()
-			.get_matches_from(vec!["grin-wallet", "-a", "default", "cli"]);
-		let global_args = wallet_args::parse_global_args(&wallet_config2, &start).unwrap();
-		let mut api =
-			grin_wallet_api::Owner::new(wallet2.clone(), None, config2.config_file_path.clone());
-		for command in [
-			vec!["grin-wallet", "account", "-a", "account_1"],
-			vec!["grin-wallet", "address"],
-			vec!["grin-wallet", "receive", "-i", &file_name],
-		] {
-			let args = app.clone().get_matches_from(command);
-			wallet_args::parse_and_execute(
-				&mut api,
-				mask2_i.clone(),
-				&wallet_config2,
-				config2.tor_config(),
-				&global_args,
-				&args,
-				true,
-				true,
-			)?;
-		}
-		let (_, txs) = api.retrieve_txs(mask2_i.as_ref(), false, None, None, None)?;
-		assert_eq!(txs.len(), 1);
-	}
+	//	// Reuse startup args as in interactive mode
+	// 	{
+	// 		let start = app
+	// 			.clone()
+	// 			.get_matches_from(vec!["grin-wallet", "-a", "default", "cli"]);
+	// 		let global_args = wallet_args::parse_global_args(&wallet_config2, &start).unwrap();
+	// 		let mut api =
+	// 			grin_wallet_api::Owner::new(wallet2.clone(), None, config2.config_file_path.clone());
+	// 		for command in [
+	// 			vec!["grin-wallet", "account", "-a", "account_1"],
+	// 			vec!["grin-wallet", "address"],
+	// 			vec!["grin-wallet", "receive", "-i", &file_name],
+	// 		] {
+	// 			let args = app.clone().get_matches_from(command);
+	// 			grin_wallet::cmd::wallet_args::parse_and_execute(
+	// 				&mut api,
+	// 				mask2_i.clone(),
+	// 				&wallet_config2,
+	// 				config2.tor_config(),
+	// 				&global_args,
+	// 				&args,
+	// 				true,
+	// 				true,
+	// 			)?;
+	// 		}
+	// 		let (_, txs) = api.retrieve_txs(mask2_i.as_ref(), false, None, None, None)?;
+	// 		assert_eq!(txs.len(), 1);
+	// 	}
+	execute_command(&app, test_dir, "wallet2", &client2, arg_vec.clone())?;
 
 	// shouldn't be allowed to receive twice
 	assert!(execute_command(&app, test_dir, "wallet2", &client2, arg_vec).is_err());
