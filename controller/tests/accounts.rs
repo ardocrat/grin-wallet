@@ -140,6 +140,19 @@ fn accounts_test_impl(test_dir: &'static str) -> Result<(), libwallet::Error> {
 					}
 				}
 			}
+			// Restore the saved account on reopen
+			api.set_active_account(m, "account1")?;
+			{
+				wallet_inst!(wallet1, w);
+				w.set_account_by_name("default")?;
+				assert_eq!(w.active_account().label, "default");
+			}
+			api.close_wallet(None)?;
+			api.open_wallet(None, "".into(), false)?;
+			{
+				wallet_inst!(wallet1, w);
+				assert_eq!(w.active_account().label, "account1");
+			}
 			Ok(())
 		},
 	)?;
