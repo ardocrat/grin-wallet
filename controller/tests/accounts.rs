@@ -106,7 +106,7 @@ fn accounts_test_impl(test_dir: &'static str) -> Result<(), libwallet::Error> {
 			// trying to add same label again should fail
 			let res = api.create_account_path(m, "account1");
 			assert!(res.is_err());
-			// Cover missing flags and temporary overrides of the saved selection.
+			// Check missing flags and temporary account changes
 			for saved in [None, Some(true)] {
 				{
 					wallet_inst!(wallet1, w);
@@ -128,7 +128,7 @@ fn accounts_test_impl(test_dir: &'static str) -> Result<(), libwallet::Error> {
 							assert_eq!(account.current, Some(account.label == active));
 						}
 					}
-					// Listing accounts must not change the saved selection.
+					// Keep the saved selection unchanged
 					wallet_inst!(wallet1, w);
 					for account in w.acct_path_iter()? {
 						let expected = if account.label == "default" {

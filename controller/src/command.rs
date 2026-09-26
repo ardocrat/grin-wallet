@@ -698,7 +698,6 @@ pub struct ReceiveArgs {
 pub fn receive<L, C, K>(
 	owner_api: &mut Owner<L, C, K>,
 	keychain_mask: Option<&SecretKey>,
-	g_args: &GlobalArgs,
 	args: ReceiveArgs,
 	mut tor_config: TorConfig,
 	test_mode: bool,
@@ -748,7 +747,7 @@ where
 		owner_api.config_path(),
 		km,
 		|api| {
-			slate = api.receive_tx(&slate, g_args.account.as_ref().map(|x| x.as_str()), None)?;
+			slate = api.receive_tx(&slate, None, None)?;
 			Ok(())
 		},
 	)?;
@@ -1171,7 +1170,6 @@ pub struct InfoArgs {
 pub fn info<L, C, K>(
 	owner_api: &mut Owner<L, C, K>,
 	keychain_mask: Option<&SecretKey>,
-	g_args: &GlobalArgs,
 	args: InfoArgs,
 	dark_scheme: bool,
 ) -> Result<(), Error>
@@ -1183,7 +1181,7 @@ where
 	let updater_running = owner_api.updater_running.load(Ordering::Relaxed);
 	let (validated, wallet_info) =
 		owner_api.retrieve_summary_info(keychain_mask, true, args.minimum_confirmations)?;
-	let account = account_label(owner_api, g_args)?;
+	let account = account_label(owner_api)?;
 	display::info(
 		&account,
 		&wallet_info,
@@ -1208,7 +1206,7 @@ where
 	let res = owner_api.node_height(keychain_mask)?;
 	let (validated, outputs) =
 		owner_api.retrieve_outputs(keychain_mask, g_args.show_spent, true, None)?;
-	let account = account_label(owner_api, g_args)?;
+	let account = account_label(owner_api)?;
 	display::outputs(
 		&account,
 		res.height,
@@ -1229,7 +1227,6 @@ pub struct TxsArgs {
 pub fn txs<L, C, K>(
 	owner_api: &mut Owner<L, C, K>,
 	keychain_mask: Option<&SecretKey>,
-	g_args: &GlobalArgs,
 	args: TxsArgs,
 	dark_scheme: bool,
 ) -> Result<(), Error>
@@ -1248,7 +1245,7 @@ where
 	let first_tx = args
 		.count
 		.map_or(0, |c| txs.len().saturating_sub(c as usize));
-	let account = account_label(owner_api, g_args)?;
+	let account = account_label(owner_api)?;
 	display::txs(
 		&account,
 		res.height,
@@ -1459,7 +1456,6 @@ where
 /// Payment Proof Address
 pub fn address<L, C, K>(
 	owner_api: &mut Owner<L, C, K>,
-	g_args: &GlobalArgs,
 	keychain_mask: Option<&SecretKey>,
 ) -> Result<(), Error>
 where
@@ -1469,7 +1465,7 @@ where
 {
 	// Just address at derivation index 0 for now
 	let address = owner_api.get_slatepack_address(keychain_mask, 0)?;
-	let account = account_label(owner_api, g_args)?;
+	let account = account_label(owner_api)?;
 	println!();
 	println!("Address for account - {}", account);
 	println!("-------------------------------------");
@@ -1479,22 +1475,14 @@ where
 }
 
 /// Get current account label.
-fn account_label<L, C, K>(
-	owner_api: &mut Owner<L, C, K>,
-	g_args: &GlobalArgs,
-) -> Result<String, Error>
+fn account_label<L, C, K>(owner_api: &mut Owner<L, C, K>) -> Result<String, Error>
 where
 	L: WalletLCProvider<'static, C, K> + 'static,
 	C: NodeClient + 'static,
 	K: keychain::Keychain + 'static,
 {
-	let label = if let Some(a) = g_args.account.as_ref() {
-		a.clone()
-	} else {
-		wallet_lock!(owner_api.wallet_inst, w);
-		w.active_account().label
-	};
-	Ok(label)
+	wallet_lock!(owner_api.wallet_inst, w);
+	Ok(w.active_account().label)
 }
 
 /// Proof Export Args
