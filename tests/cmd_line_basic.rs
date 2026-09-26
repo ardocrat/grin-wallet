@@ -21,7 +21,9 @@ extern crate log;
 extern crate grin_wallet;
 
 use grin_wallet_impls::test_framework::{self, LocalWalletClient, WalletProxy};
+use std::io::Write;
 use std::path::PathBuf;
+use std::process::{Command, Stdio};
 
 use clap::App;
 use std::thread;
@@ -139,6 +141,36 @@ fn command_line_test_impl(test_dir: &str) -> Result<(), grin_wallet_controller::
 		"account_2",
 	];
 	execute_command(&app, test_dir, "wallet2", &client2, arg_vec)?;
+
+	// Check account selection through the CLI loop
+	let mut cli = Command::new(env!("CARGO_BIN_EXE_grin-wallet"))
+		.args([
+			"-t",
+			&format!("{}/wallet2", test_dir),
+			"-p",
+			"password2",
+			"-a",
+			"account_1",
+			"-r",
+			"http://127.0.0.1:1",
+			"cli",
+		])
+		.stdin(Stdio::piped())
+		.stdout(Stdio::piped())
+		.stderr(Stdio::piped())
+		.spawn()
+		.unwrap();
+	cli.stdin.take().unwrap().write_all(
+		b"open\naddress\nclose\n-a default open\naddress\naccount -a account_1\naddress\nexit\n",
+	).unwrap();
+	let output = cli.wait_with_output().unwrap();
+	assert!(output.status.success());
+	let output = String::from_utf8(output.stdout).unwrap();
+	let accounts: Vec<_> = output
+		.lines()
+		.filter_map(|line| line.strip_prefix("Address for account - "))
+		.collect();
+	assert_eq!(accounts, ["account_1", "default", "account_1"]);
 
 	// let's see those accounts
 	let arg_vec = vec!["grin-wallet", "-p", "password1", "account"];

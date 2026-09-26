@@ -202,7 +202,10 @@ where
 										None
 									}
 								};
-								if let Some(account) = args.value_of("account") {
+								if let Some(account) = args
+									.value_of("account")
+									.or(global_wallet_args.account.as_deref())
+								{
 									if wallet_opened {
 										let wallet_inst = lc.wallet_inst()?;
 										wallet_inst.set_account_by_name(account)?;

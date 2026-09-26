@@ -40,7 +40,7 @@ subcommands:
   - cli:
       about: Start the wallet in interactive CLI mode (EXPERIMENTAL and UNDER DEVELOPMENT)
   - account:
-      about: List wallet accounts or create a new account
+      about: List accounts, create an account or select the active account
       args:
         - create:
             help: Create a new wallet account with provided name
@@ -54,7 +54,7 @@ subcommands:
             default_value: "10"
             takes_value: true
         - active:
-            help: Set active account by provided name
+            help: Save the active account, used whenever --account is not given
             short: a
             long: active
             takes_value: true

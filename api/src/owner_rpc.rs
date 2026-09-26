@@ -175,6 +175,7 @@ pub trait OwnerRpc {
 
 	/**
 	Networked version of [Owner::set_active_account](struct.Owner.html#method.set_active_account).
+	The account selection is saved across wallet restarts
 
 	# Json rpc example
 
