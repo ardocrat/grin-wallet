@@ -65,9 +65,13 @@ where
 	} else {
 		keys::accounts(w)?
 	};
+	let active = w.parent_key_id();
+	for account in accounts.iter_mut() {
+		account.current = Some(account.path == active);
+	}
 	accounts.sort_by(|a, b| a.path.cmp(&b.path));
 	// Put active account on top.
-	accounts.sort_by_key(|k| k.path != w.parent_key_id());
+	accounts.sort_by_key(|k| k.path != active);
 	Ok(accounts)
 }
 

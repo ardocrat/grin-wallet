@@ -106,6 +106,40 @@ fn accounts_test_impl(test_dir: &'static str) -> Result<(), libwallet::Error> {
 			// trying to add same label again should fail
 			let res = api.create_account_path(m, "account1");
 			assert!(res.is_err());
+			// Cover missing flags and temporary overrides of the saved selection.
+			for saved in [None, Some(true)] {
+				{
+					wallet_inst!(wallet1, w);
+					let mut account = w.get_acct_path("default".to_owned())?.unwrap();
+					account.current = saved;
+					let mut batch = w.batch(m)?;
+					batch.save_acct_path(account)?;
+					batch.commit()?;
+				}
+				for active in ["default", "account1"] {
+					{
+						wallet_inst!(wallet1, w);
+						w.set_account_by_name(active)?;
+					}
+					for accounts in [api.accounts(m)?, api.accounts_info(m, 2)?] {
+						assert_eq!(accounts.len(), 4);
+						assert_eq!(accounts[0].label, active);
+						for account in accounts {
+							assert_eq!(account.current, Some(account.label == active));
+						}
+					}
+					// Listing accounts must not change the saved selection.
+					wallet_inst!(wallet1, w);
+					for account in w.acct_path_iter()? {
+						let expected = if account.label == "default" {
+							saved
+						} else {
+							None
+						};
+						assert_eq!(account.current, expected);
+					}
+				}
+			}
 			Ok(())
 		},
 	)?;
