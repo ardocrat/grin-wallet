@@ -245,35 +245,34 @@ fn command_line_test_impl(test_dir: &str) -> Result<(), grin_wallet_controller::
 		"-i",
 		&file_name,
 	];
-	//	// Reuse startup args as in interactive mode
-	// 	{
-	// 		let start = app
-	// 			.clone()
-	// 			.get_matches_from(vec!["grin-wallet", "-a", "default", "cli"]);
-	// 		let global_args = wallet_args::parse_global_args(&wallet_config2, &start).unwrap();
-	// 		let mut api =
-	// 			grin_wallet_api::Owner::new(wallet2.clone(), None, config2.config_file_path.clone());
-	// 		for command in [
-	// 			vec!["grin-wallet", "account", "-a", "account_1"],
-	// 			vec!["grin-wallet", "address"],
-	// 			vec!["grin-wallet", "receive", "-i", &file_name],
-	// 		] {
-	// 			let args = app.clone().get_matches_from(command);
-	// 			grin_wallet::cmd::wallet_args::parse_and_execute(
-	// 				&mut api,
-	// 				mask2_i.clone(),
-	// 				&wallet_config2,
-	// 				config2.tor_config(),
-	// 				&global_args,
-	// 				&args,
-	// 				true,
-	// 				true,
-	// 			)?;
-	// 		}
-	// 		let (_, txs) = api.retrieve_txs(mask2_i.as_ref(), false, None, None, None)?;
-	// 		assert_eq!(txs.len(), 1);
-	// 	}
-	execute_command(&app, test_dir, "wallet2", &client2, arg_vec.clone())?;
+	// Reuse startup args as in interactive mode
+	{
+		let start = app
+			.clone()
+			.get_matches_from(vec!["grin-wallet", "-a", "default", "cli"]);
+		let global_args =
+			grin_wallet::cmd::wallet_args::parse_global_args(&wallet_config2, &start).unwrap();
+		let mut api = Owner::new(wallet2.clone(), None, config2.config_file_path.clone());
+		for command in [
+			vec!["grin-wallet", "account", "-a", "account_1"],
+			vec!["grin-wallet", "address"],
+			vec!["grin-wallet", "receive", "-i", &file_name],
+		] {
+			let args = app.clone().get_matches_from(command);
+			grin_wallet::cmd::wallet_args::parse_and_execute(
+				&mut api,
+				mask2_i.clone(),
+				&wallet_config2,
+				config2.tor_config(),
+				&global_args,
+				&args,
+				true,
+				true,
+			)?;
+		}
+		let (_, txs) = api.retrieve_txs(mask2_i.as_ref(), true, None, None, None)?;
+		assert_eq!(txs.len(), 1);
+	}
 
 	// shouldn't be allowed to receive twice
 	assert!(execute_command(&app, test_dir, "wallet2", &client2, arg_vec).is_err());
@@ -745,7 +744,7 @@ fn command_line_test_impl(test_dir: &str) -> Result<(), grin_wallet_controller::
 
 	// Failed send, with --late-lock, make sure outputs not locked (amount not changed).
 	api2.set_active_account(mask2, "account_1")?;
-	let (_, txs_before) = api2.retrieve_txs(mask2, false, None, None, None)?;
+	let (_, txs_before) = api2.retrieve_txs(mask2, true, None, None, None)?;
 	let (_, wallet1_info) = api2.retrieve_summary_info(mask2, true, 1)?;
 	let old_balance = wallet1_info.amount_currently_spendable;
 	let mut arg_vec = vec![
@@ -783,7 +782,7 @@ fn command_line_test_impl(test_dir: &str) -> Result<(), grin_wallet_controller::
 	};
 	send(&args)?;
 	api2.set_active_account(mask2, "account_1")?;
-	let (_, txs_after) = api2.retrieve_txs(mask2, false, None, None, None)?;
+	let (_, txs_after) = api2.retrieve_txs(mask2, true, None, None, None)?;
 	assert_eq!(txs_before.len(), txs_after.len());
 	let (_, wallet1_info) = api2.retrieve_summary_info(mask2, true, 1)?;
 	assert_eq!(old_balance, wallet1_info.amount_currently_spendable);
