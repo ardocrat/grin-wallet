@@ -376,7 +376,7 @@ where
 			tx.is_ok()
 		})
 		.map(|tx| tx.unwrap())
-		.find(|tx| tx.tx_slate_id == Some(slate.id));
+		.find(|tx| tx.parent_key_id == *parent_key_id && tx.tx_slate_id == Some(slate.id));
 	if let Some(mut tx) = tx {
 		let mut batch = wallet.batch(keychain_mask)?;
 		tx.tx_slate_state = Some(slate.state.clone());
