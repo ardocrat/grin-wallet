@@ -270,8 +270,9 @@ fn command_line_test_impl(test_dir: &str) -> Result<(), grin_wallet_controller::
 				true,
 			)?;
 		}
-		let (_, txs) = api.retrieve_txs(mask2_i.as_ref(), true, None, None, None)?;
+		let (_, txs) = api.retrieve_txs(mask2_i.as_ref(), false, None, None, None)?;
 		assert_eq!(txs.len(), 1);
+		api.set_active_account(mask2_i.as_ref(), "default")?;
 	}
 
 	// shouldn't be allowed to receive twice
@@ -744,7 +745,7 @@ fn command_line_test_impl(test_dir: &str) -> Result<(), grin_wallet_controller::
 
 	// Failed send, with --late-lock, make sure outputs not locked (amount not changed).
 	api2.set_active_account(mask2, "account_1")?;
-	let (_, txs_before) = api2.retrieve_txs(mask2, true, None, None, None)?;
+	let (_, txs_before) = api2.retrieve_txs(mask2, false, None, None, None)?;
 	let (_, wallet1_info) = api2.retrieve_summary_info(mask2, true, 1)?;
 	let old_balance = wallet1_info.amount_currently_spendable;
 	let mut arg_vec = vec![
@@ -782,7 +783,7 @@ fn command_line_test_impl(test_dir: &str) -> Result<(), grin_wallet_controller::
 	};
 	send(&args)?;
 	api2.set_active_account(mask2, "account_1")?;
-	let (_, txs_after) = api2.retrieve_txs(mask2, true, None, None, None)?;
+	let (_, txs_after) = api2.retrieve_txs(mask2, false, None, None, None)?;
 	assert_eq!(txs_before.len(), txs_after.len());
 	let (_, wallet1_info) = api2.retrieve_summary_info(mask2, true, 1)?;
 	assert_eq!(old_balance, wallet1_info.amount_currently_spendable);
