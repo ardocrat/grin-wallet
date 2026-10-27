@@ -2855,7 +2855,7 @@ pub fn try_slatepack_sync_workflow(
 	let mut sender = match TorSlateSender::new(&tor_addr.to_http_str(), tor_config) {
 		Ok(s) => s,
 		Err(e) => {
-			debug!("Send (Tor): Cannot create TOR Slate sender {:?}", e);
+			debug!("Cannot create Tor Slate sender {:?}", e);
 			return Err(e);
 		}
 	};

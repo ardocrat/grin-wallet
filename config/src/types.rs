@@ -187,7 +187,7 @@ pub struct TorWalletConfig {
 	pub skip_send_attempt: Option<bool>,
 	/// Whether to start Tor listener on listener startup (default true).
 	pub use_tor_listener: bool,
-	/// Just the address of the socks proxy for now.
+	/// The address of the socks proxy for external process.
 	pub socks_proxy_addr: String,
 	/// Send configuration directory.
 	pub send_config_dir: String,
@@ -234,6 +234,10 @@ impl TorConfig for TorWalletConfig {
 		let mut path = PathBuf::from(&self.send_config_dir);
 		path.push("tor");
 		path
+	}
+
+	fn socks_proxy_addr(&self) -> String {
+		self.socks_proxy_addr.clone()
 	}
 }
 

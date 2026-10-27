@@ -16,9 +16,11 @@ use crate::client_utils::{Client, ClientError};
 use crate::libwallet::slate_versions::{SlateVersion, VersionedSlate};
 use crate::libwallet::{Error, Slate};
 use crate::SlateSender;
-use grin_p2p::tor::arti::{start_tor_client, tor_post};
+
+use grin_p2p::tor::arti::tor_post;
 use grin_p2p::tor::config::{TorConfig, REQUEST_TIMEOUT_SECS};
 use grin_p2p::tor::process::types::TorProcess;
+use grin_p2p::tor::start_tor;
 use grin_wallet_config::TorWalletConfig;
 use serde::Serialize;
 use serde_json::{json, Value};
@@ -38,13 +40,7 @@ impl TorSlateSender {
 		if !base_url.starts_with("http") && !base_url.starts_with("https") {
 			Err(Error::GenericError("Scheme must be http".to_string()))
 		} else {
-			let tor = if config.use_integrated.unwrap_or(false) {
-				start_tor_client(config)?;
-				None
-			} else {
-				let p = TorProcess::start_sender(config, &config.socks_proxy_addr)?;
-				Some(p)
-			};
+			let tor = start_tor(config)?;
 			Ok(TorSlateSender {
 				base_url: base_url.to_owned(),
 				tor_process: Arc::new(tor),

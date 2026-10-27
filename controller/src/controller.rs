@@ -47,9 +47,10 @@ use crate::apiwallet::{
 use easy_jsonrpc_mw;
 use easy_jsonrpc_mw::{Handler, MaybeReply};
 use grin_api::ApiBody;
-use grin_p2p::tor::arti::{start_tor_service, stop_tor_service};
+use grin_p2p::tor::arti::stop_tor_service;
 use grin_p2p::tor::config::TorConfig;
 use grin_p2p::tor::process::types::TorProcess;
+use grin_p2p::tor::start_onion_service;
 use grin_wallet_config::config::{
 	add_global_config_listener, get_global_config, remove_global_config_listener,
 };
@@ -214,7 +215,8 @@ where
 			let sec_key =
 				address::address_from_derivation_path(&k, &parent_key_id, SlatepackAddressIndex(0))
 					.map_err(|e| Error::TorConfig(format!("{:?}", e)))?;
-			let tor_dir = format!("{}/tor/listener", lc.get_top_level_directory()?);
+			let mut tor_dir = PathBuf::from(lc.get_top_level_directory()?);
+			tor_dir.push("tor");
 			let onion_address = OnionV3Address::from_private(&sec_key.0)
 				.map_err(|e| Error::TorConfig(format!("{:?}", e)))?;
 			(sec_key, tor_dir, onion_address)
@@ -245,25 +247,8 @@ where
 
 		// Need to keep external process in scope while the listener is running.
 		let _tor_service = if tor_config.use_tor_listener {
-			let use_integrated = tor_config.use_integrated();
-
-			let res: Result<Option<TorProcess>, Error> = if use_integrated {
-				match start_tor_service(sec_key, addr, &tor_config) {
-					Ok(_) => Ok(None),
-					Err(e) => {
-						error!("Error starting integrated Tor service: {}", e);
-						Err(e.into())
-					}
-				}
-			} else {
-				match TorProcess::start_listener(sec_key, tor_dir, addr, tor_config.clone()) {
-					Ok(p) => Ok(Some(p)),
-					Err(e) => {
-						error!("Error starting external Tor listener: {}", e);
-						Err(e.into())
-					}
-				}
-			};
+			let res: Result<Option<TorProcess>, grin_p2p::tor::Error> =
+				start_onion_service(sec_key, addr, tor_dir, &tor_config);
 			match res {
 				Ok(service) => {
 					warn!(
@@ -304,7 +289,7 @@ where
 			.join()
 			.map_err(|e| Error::GenericError(format!("API thread panicked :{:?}", e)));
 
-		if tor_config.use_tor_listener && tor_config.use_integrated.unwrap_or(false) {
+		if tor_config.use_tor_listener && tor_config.use_integrated() {
 			stop_tor_service(onion_address.to_string())?;
 		}
 
