@@ -16,7 +16,7 @@
 
 use crate::api::TLSConfig;
 use crate::apiwallet::{try_slatepack_sync_workflow, Owner};
-use crate::config::{TorConfig, WalletConfig, WALLET_CONFIG_FILE_NAME};
+use crate::config::{TorWalletConfig, WalletConfig, WALLET_CONFIG_FILE_NAME};
 use crate::core::{core, global};
 use crate::error::Error;
 use crate::keychain;
@@ -368,7 +368,7 @@ pub fn send<L, C, K>(
 	owner_api: &mut Owner<L, C, K>,
 	keychain_mask: Option<&SecretKey>,
 	args: SendArgs,
-	tor_config: TorConfig,
+	tor_config: TorWalletConfig,
 	dark_scheme: bool,
 	test_mode: bool,
 ) -> Result<(), Error>
@@ -392,7 +392,7 @@ pub fn send_to_account<L, C, K>(
 	owner_api: &mut Owner<L, C, K>,
 	keychain_mask: Option<&SecretKey>,
 	args: SendArgs,
-	tor_config: TorConfig,
+	tor_config: TorWalletConfig,
 	dark_scheme: bool,
 	account: &str,
 	payment_proof: bool,
@@ -425,7 +425,7 @@ fn send_impl<L, C, K>(
 	owner_api: &mut Owner<L, C, K>,
 	keychain_mask: Option<&SecretKey>,
 	args: SendArgs,
-	mut tor_config: TorConfig,
+	mut tor_config: TorWalletConfig,
 	dark_scheme: bool,
 	test_mode: bool,
 	account: Option<(&str, bool)>,
@@ -624,7 +624,7 @@ where
 	}
 
 	let dest = dest.as_ref().unwrap();
-	let res = try_slatepack_sync_workflow(&slate, dest, Some(tor_config), None, false);
+	let res = try_slatepack_sync_workflow(&slate, dest, &tor_config, false);
 
 	match res {
 		Ok(s) => {
@@ -802,7 +802,7 @@ pub fn receive<L, C, K>(
 	owner_api: &mut Owner<L, C, K>,
 	keychain_mask: Option<&SecretKey>,
 	args: ReceiveArgs,
-	mut tor_config: TorConfig,
+	mut tor_config: TorWalletConfig,
 	test_mode: bool,
 ) -> Result<(), Error>
 where
@@ -872,7 +872,7 @@ where
 	}
 
 	let dest = ret_address.as_ref().unwrap();
-	let res = try_slatepack_sync_workflow(&slate, dest, Some(tor_config), None, true);
+	let res = try_slatepack_sync_workflow(&slate, dest, &tor_config, true);
 
 	match res {
 		Ok(s) => {
@@ -1129,7 +1129,7 @@ pub struct ProcessInvoiceArgs {
 pub fn process_invoice<L, C, K>(
 	owner_api: &mut Owner<L, C, K>,
 	keychain_mask: Option<&SecretKey>,
-	mut tor_config: TorConfig,
+	mut tor_config: TorWalletConfig,
 	args: ProcessInvoiceArgs,
 	dark_scheme: bool,
 	test_mode: bool,
@@ -1229,7 +1229,7 @@ where
 	}
 
 	let dest = ret_address.as_ref().unwrap();
-	let res = try_slatepack_sync_workflow(&slate, dest, Some(tor_config), None, true);
+	let res = try_slatepack_sync_workflow(&slate, dest, &tor_config, true);
 
 	match res {
 		Ok(s) => {

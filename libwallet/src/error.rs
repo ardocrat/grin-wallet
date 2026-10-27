@@ -255,9 +255,9 @@ pub enum Error {
 	#[error("Supplied Keychain Mask Token is incorrect")]
 	InvalidKeychainMask,
 
-	/// Tor Process error
-	#[error("Tor Process Error: {0}")]
-	TorProcess(String),
+	/// Generic Tor error
+	#[error("Tor Error: {0}")]
+	Tor(String),
 
 	/// Tor Configuration Error
 	#[error("Tor Config Error: {0}")]
@@ -375,6 +375,12 @@ impl From<&str> for Error {
 impl From<bech32::Error> for Error {
 	fn from(error: bech32::Error) -> Error {
 		Error::SlatepackAddress(format!("{}", error))
+	}
+}
+
+impl From<grin_p2p::tor::Error> for Error {
+	fn from(error: grin_p2p::tor::Error) -> Error {
+		Error::Tor(format!("{}", error))
 	}
 }
 

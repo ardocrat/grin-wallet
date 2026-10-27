@@ -771,7 +771,7 @@ fn command_line_test_impl(test_dir: &str) -> Result<(), grin_wallet_controller::
 	];
 	let args = app.clone().get_matches_from(arg_vec.clone());
 	let mut config = initial_setup_wallet(test_dir, "wallet2");
-	config.members.tor = Some(grin_wallet_config::TorConfig {
+	config.members.tor = Some(grin_wallet_config::TorWalletConfig {
 		use_integrated: Some(false),
 		socks_proxy_addr: "invalid".into(),
 		..Default::default()

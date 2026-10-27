@@ -18,6 +18,7 @@ pub mod tor;
 pub use self::file::PathToSlate;
 pub use self::tor::TorSlateSender;
 
+use crate::config::TorWalletConfig;
 use crate::config::WalletConfig;
 use crate::libwallet::{Error, Slate};
 use crate::util::ZeroingString;
@@ -26,7 +27,12 @@ use crate::util::ZeroingString;
 pub trait SlateSender {
 	/// Send a transaction slate to another listening wallet and return result
 	/// TODO: Probably need a slate wrapper type
-	fn send_tx(&mut self, slate: &Slate, finalize: bool) -> Result<Slate, Error>;
+	fn send_tx(
+		&mut self,
+		slate: &Slate,
+		tor_config: &TorWalletConfig,
+		finalize: bool,
+	) -> Result<Slate, Error>;
 }
 
 pub trait SlateReceiver {

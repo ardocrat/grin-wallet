@@ -17,7 +17,7 @@ use grin_wallet_libwallet::RetrieveTxQueryArgs;
 use libwallet::mwixnet::MwixnetReqCreationResult;
 use uuid::Uuid;
 
-use crate::config::{TorConfig, WalletConfig};
+use crate::config::{TorWalletConfig, WalletConfig};
 use crate::core::core::OutputFeatures;
 use crate::core::global;
 use crate::keychain::{Identifier, Keychain};
@@ -1455,7 +1455,7 @@ pub trait OwnerRpc {
 		chain_type: global::ChainTypes,
 		wallet_config: Option<WalletConfig>,
 		logging_config: Option<LoggingConfig>,
-		tor_config: Option<TorConfig>,
+		tor_config: Option<TorWalletConfig>,
 	) -> Result<(), Error>;
 
 	/**
@@ -2066,7 +2066,7 @@ pub trait OwnerRpc {
 	# , 0, false, false, false, false);
 	```
 	*/
-	fn set_tor_config(&self, tor_config: Option<TorConfig>) -> Result<(), Error>;
+	fn set_tor_config(&self, tor_config: Option<TorWalletConfig>) -> Result<(), Error>;
 
 	/**
 	Networked version of [Owner::build_output](struct.Owner.html#method.build_output).
@@ -2443,7 +2443,7 @@ where
 		chain_type: global::ChainTypes,
 		wallet_config: Option<WalletConfig>,
 		logging_config: Option<LoggingConfig>,
-		tor_config: Option<TorConfig>,
+		tor_config: Option<TorWalletConfig>,
 	) -> Result<(), Error> {
 		Owner::create_config(self, &chain_type, wallet_config, logging_config, tor_config)
 	}
@@ -2589,7 +2589,7 @@ where
 		Owner::verify_payment_proof(self, token.keychain_mask.as_ref(), &proof)
 	}
 
-	fn set_tor_config(&self, tor_config: Option<TorConfig>) -> Result<(), Error> {
+	fn set_tor_config(&self, tor_config: Option<TorWalletConfig>) -> Result<(), Error> {
 		Owner::set_tor_config(self, tor_config)?;
 		Ok(())
 	}

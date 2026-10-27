@@ -16,13 +16,12 @@
 
 use crate::comments::insert_comments;
 use crate::core::global;
-use crate::types::{
-	ConfigError, GlobalWalletConfig, GlobalWalletConfigMembers, TorBridgeConfig, TorProxyConfig,
-};
-use crate::types::{TorConfig, WalletConfig};
+use crate::types::{ConfigError, GlobalWalletConfig, GlobalWalletConfigMembers};
+use crate::types::{TorWalletConfig, WalletConfig};
 use crate::util::logger::LoggingConfig;
 use crate::util::{Mutex, RwLock};
 
+use grin_p2p::tor::config::{TorBridgeConfig, TorProxyConfig};
 use lazy_static::lazy_static;
 use rand::distributions::{Alphanumeric, Distribution};
 use rand::{thread_rng, Rng};
@@ -125,6 +124,11 @@ pub fn get_global_config(config_path: &Path) -> Result<GlobalWalletConfig, Confi
 	let config = GlobalWalletConfig::new(config_path.to_path_buf())?;
 	let mut configs = CONFIG_INSTANCES.write();
 	Ok(cache_loaded_config(&mut configs, config_path, config))
+}
+
+/// Get global Tor configuration using provided path.
+pub fn get_global_tor_config(config_path: &Path) -> Result<TorWalletConfig, ConfigError> {
+	Ok(get_global_config(config_path)?.tor_config())
 }
 
 /// Load, update and save a configuration as one operation.
@@ -399,7 +403,7 @@ impl Default for GlobalWalletConfigMembers {
 		GlobalWalletConfigMembers {
 			config_file_version: Some(2),
 			logging: Some(LoggingConfig::default()),
-			tor: Some(TorConfig::default()),
+			tor: Some(TorWalletConfig::default()),
 			wallet: WalletConfig::default(),
 		}
 	}
@@ -433,10 +437,10 @@ impl GlobalWalletConfig {
 
 	/// Return the configured Tor settings, resolving the legacy default when the
 	/// config file does not yet contain a `[tor]` section.
-	pub fn tor_config(&self) -> TorConfig {
-		self.members.tor.clone().unwrap_or_else(|| TorConfig {
+	pub fn tor_config(&self) -> TorWalletConfig {
+		self.members.tor.clone().unwrap_or_else(|| TorWalletConfig {
 			send_config_dir: self.members.wallet.data_file_dir.clone(),
-			..TorConfig::default()
+			..TorWalletConfig::default()
 		})
 	}
 
@@ -639,7 +643,7 @@ impl GlobalWalletConfig {
 		}
 		let adjusted_config = GlobalWalletConfigMembers {
 			config_file_version: GlobalWalletConfigMembers::default().config_file_version,
-			tor: Some(TorConfig {
+			tor: Some(TorWalletConfig {
 				bridge: TorBridgeConfig::default(),
 				proxy: TorProxyConfig::default(),
 				..config.tor.unwrap_or_default()
@@ -849,10 +853,10 @@ mod tests {
 		assert_eq!(resolved.send_config_dir, "legacy-wallet-data");
 		assert!(resolved.use_tor_listener);
 
-		let disabled = TorConfig {
+		let disabled = TorWalletConfig {
 			use_tor_listener: false,
 			skip_send_attempt: Some(true),
-			..TorConfig::default()
+			..TorWalletConfig::default()
 		};
 		config.members.tor = Some(disabled.clone());
 		assert_eq!(config.tor_config(), disabled);

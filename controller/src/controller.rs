@@ -15,10 +15,7 @@
 //! Controller for wallet, instantiates and handles listeners (or single-run
 //! invocations) as needed.
 use crate::api::{self, ApiServer, BasicAuthMiddleware, ResponseFuture, Router, TLSConfig};
-use crate::config::TorConfig;
-use crate::impls::tor::config as tor_config;
-use crate::impls::tor::process as tor_process;
-use crate::impls::tor::{bridge as tor_bridge, proxy as tor_proxy};
+use crate::config::TorWalletConfig;
 use crate::keychain::Keychain;
 use crate::libwallet::{
 	address, Error, NodeClient, NodeVersionInfo, Slate, SlatepackAddress, WalletLCProvider,
@@ -50,11 +47,12 @@ use crate::apiwallet::{
 use easy_jsonrpc_mw;
 use easy_jsonrpc_mw::{Handler, MaybeReply};
 use grin_api::ApiBody;
+use grin_p2p::tor::arti::{start_tor_service, stop_tor_service};
+use grin_p2p::tor::config::TorConfig;
+use grin_p2p::tor::process::types::TorProcess;
 use grin_wallet_config::config::{
 	add_global_config_listener, get_global_config, remove_global_config_listener,
 };
-use grin_wallet_impls::tor::arti::{start_tor_service, stop_tor_service};
-use grin_wallet_impls::tor::process::TorProcess;
 use grin_wallet_libwallet::slatepack::SlatepackAddressIndex;
 use http_body_util::{BodyExt, Full};
 use hyper::body::Incoming;
@@ -86,49 +84,6 @@ fn check_middleware(
 			Ok(())
 		}
 	}
-}
-
-/// initiate the tor listener
-fn init_tor_listener(
-	sec_key: SecretKey,
-	tor_dir: String,
-	addr: &str,
-	tor_config: TorConfig,
-) -> Result<tor_process::TorProcess, Error> {
-	info!("Starting external Tor Process listener.");
-
-	let mut process = tor_process::TorProcess::new();
-	let tor_timeout = tor_config.bootstrap_timeout().as_secs();
-
-	let mut hm_tor_bridge: HashMap<String, String> = HashMap::new();
-	if tor_config.bridge.bridge_line.is_some() {
-		let bridge_config = tor_bridge::TorBridge::try_from(tor_config.bridge)
-			.map_err(|e| Error::TorConfig(format!("{}", e)))?;
-		hm_tor_bridge = bridge_config
-			.to_hashmap()
-			.map_err(|e| Error::TorConfig(format!("{}", e)))?;
-	}
-
-	let mut hm_tor_poxy: HashMap<String, String> = HashMap::new();
-	if tor_config.proxy.transport.is_some() || tor_config.proxy.allowed_port.is_some() {
-		let proxy_config = tor_proxy::TorProxy::try_from(tor_config.proxy)
-			.map_err(|e| Error::TorConfig(format!("{}", e)))?;
-		hm_tor_poxy = proxy_config
-			.to_hashmap()
-			.map_err(|e| Error::TorConfig(format!("{}", e)))?;
-	}
-
-	tor_config::output_tor_listener_config(&tor_dir, addr, &[sec_key], hm_tor_bridge, hm_tor_poxy)
-		.map_err(|e| Error::TorConfig(format!("{:?}", e)))?;
-	// Start TOR process
-	process
-		.torrc_path(&format!("{}/torrc", tor_dir))
-		.working_dir(&tor_dir)
-		.timeout(tor_timeout)
-		.completion_percent(100)
-		.launch()
-		.map_err(|e| Error::TorProcess(format!("{:?}", e)))?;
-	Ok(process)
 }
 
 /// Instantiate wallet Foreign API for a single-use (command line) call
@@ -290,22 +245,22 @@ where
 
 		// Need to keep external process in scope while the listener is running.
 		let _tor_service = if tor_config.use_tor_listener {
-			let use_integrated = tor_config.use_integrated.unwrap_or(false);
+			let use_integrated = tor_config.use_integrated();
 
 			let res: Result<Option<TorProcess>, Error> = if use_integrated {
-				match start_tor_service(sec_key, addr, &tor_config.clone()) {
+				match start_tor_service(sec_key, addr, &tor_config) {
 					Ok(_) => Ok(None),
 					Err(e) => {
 						error!("Error starting integrated Tor service: {}", e);
-						Err(e)
+						Err(e.into())
 					}
 				}
 			} else {
-				match init_tor_listener(sec_key, tor_dir, addr, tor_config.clone()) {
+				match TorProcess::start_listener(sec_key, tor_dir, addr, tor_config.clone()) {
 					Ok(p) => Ok(Some(p)),
 					Err(e) => {
 						error!("Error starting external Tor listener: {}", e);
-						Err(e)
+						Err(e.into())
 					}
 				}
 			};
@@ -377,7 +332,7 @@ fn listener_tor_config(
 	config_path: &Path,
 	bridge: Option<String>,
 	use_tor: Option<bool>,
-) -> Result<TorConfig, Error> {
+) -> Result<TorWalletConfig, Error> {
 	let mut tor_config = get_global_config(config_path)?.tor_config();
 	if let Some(bridge) = bridge {
 		tor_config.bridge.bridge_line = Some(bridge);
