@@ -379,7 +379,11 @@ impl From<bech32::Error> for Error {
 
 impl From<grin_p2p::tor::Error> for Error {
 	fn from(error: grin_p2p::tor::Error) -> Error {
-		Error::Tor(format!("{}", error))
+		match error {
+			grin_p2p::tor::Error::Config(e) => Error::TorConfig(e),
+			grin_p2p::tor::Error::Generic(e) => Error::Tor(e),
+			grin_p2p::tor::Error::Post(e) => Error::Tor(format!("{}", e)),
+		}
 	}
 }
 
