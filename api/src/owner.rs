@@ -14,11 +14,11 @@
 
 //! Owner API External Definition
 
+use crate::config::config::get_global_tor_config;
 use crate::config::config::{reload_global_config, update_global_config, WALLET_CONFIG_FILE_NAME};
 use crate::config::{TorWalletConfig, WalletConfig};
 use crate::core::core::OutputFeatures;
 use crate::core::global;
-use crate::impls::json_rpc;
 use crate::impls::SlateSender as _;
 use crate::impls::TorSlateSender;
 use crate::keychain::{Identifier, Keychain};
@@ -38,12 +38,14 @@ use crate::libwallet::{
 use crate::util::logger::LoggingConfig;
 use crate::util::secp::{key::SecretKey, pedersen::Commitment};
 use crate::util::{from_hex, static_secp_instance, Mutex, ZeroingString};
+
+use grin_api::json_rpc;
+use grin_p2p::tor::arti::tor_post;
 use grin_p2p::tor::ov3::OnionV3Address;
 
 use chrono::prelude::*;
 use ed25519_dalek::SigningKey as DalekSecretKey;
-use grin_p2p::tor::arti::tor_post;
-use grin_wallet_config::config::get_global_tor_config;
+use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::fs::File;
 use std::io::Write;
@@ -2826,7 +2828,11 @@ where
 		let rpc_params = serde_json::json!([req]);
 		let rpc_request = json_rpc::build_request("swap", &rpc_params);
 		let tor_config = get_global_tor_config(&self.config_path())?;
-		let response = match tor_post(&tor_config, &rpc_request, &url) {
+		let request = serde_json::json!(rpc_request);
+		let mut headers = HashMap::new();
+		headers.insert("accept", "application/json");
+		headers.insert("content-type", "application/json");
+		let response = match tor_post(&tor_config, request.to_string(), Some(headers), &url) {
 			Ok(response) => response,
 			Err(e) => {
 				return Err(Error::GenericError(format!(

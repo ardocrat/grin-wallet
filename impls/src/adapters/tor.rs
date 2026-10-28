@@ -22,8 +22,9 @@ use grin_p2p::tor::config::{TorConfig, REQUEST_TIMEOUT_SECS};
 use grin_p2p::tor::process::types::TorProcess;
 use grin_p2p::tor::start_tor;
 use grin_wallet_config::TorWalletConfig;
-use serde::Serialize;
+
 use serde_json::{json, Value};
+use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::Duration;
@@ -61,7 +62,7 @@ impl TorSlateSender {
 			"params": []
 		});
 
-		let res: String = self.post(url, req, config).map_err(|e| {
+		let res: String = self.post(url, req.to_string(), config).map_err(|e| {
 			let mut report = format!("Performing version check (is recipient listening?): {}", e);
 			let err_string = format!("{}", e);
 			if !config.use_integrated() && err_string.contains("404") {
@@ -111,15 +112,12 @@ impl TorSlateSender {
 		Err(Error::ClientCallback(report))
 	}
 
-	fn post<IN>(
+	fn post(
 		&self,
 		url: &str,
-		input: IN,
+		body: String,
 		config: &TorWalletConfig,
-	) -> Result<String, ClientError>
-	where
-		IN: Serialize,
-	{
+	) -> Result<String, ClientError> {
 		let res = if self.tor_process.is_some() {
 			let socks_proxy_addr =
 				SocketAddr::V4(config.socks_proxy_addr.parse().map_err(|_| {
@@ -133,10 +131,14 @@ impl TorSlateSender {
 			);
 			let client = Client::with_proxy(socks_proxy_addr, "socks5h://", timeout)
 				.map_err(|_| ClientError::Internal("Unable to create http client".into()))?;
-			let req = client.create_post_request(url, None, &input)?;
+			let req = client.create_post_request(url, None, &body)?;
 			client.send_request(req)?
 		} else {
-			tor_post(config, &input, url).map_err(|e| ClientError::RequestError(e.to_string()))?
+			let mut headers = HashMap::new();
+			headers.insert("accept", "application/json");
+			headers.insert("content-type", "application/json");
+			tor_post(config, body, Some(headers), url)
+				.map_err(|e| ClientError::RequestError(e.to_string()))?
 		};
 		Ok(res)
 	}
@@ -182,7 +184,7 @@ impl SlateSender for TorSlateSender {
 
 		trace!("Sending receive_tx request: {}", req);
 
-		let res: String = self.post(&url_str, req, config).map_err(|e| {
+		let res: String = self.post(&url_str, req.to_string(), config).map_err(|e| {
 			let report = format!(
 				"Sending transaction slate to other wallet (is recipient listening?): {}",
 				e

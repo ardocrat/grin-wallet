@@ -43,7 +43,6 @@ pub mod test_framework;
 pub use crate::adapters::{
 	PathToSlate, SlateGetter, SlatePutter, SlateReceiver, SlateSender, TorSlateSender,
 };
-pub use crate::client_utils::json_rpc;
 pub use crate::error::Error;
 pub use crate::lifecycle::DefaultLCProvider;
 pub use crate::node_clients::HTTPNodeClient;

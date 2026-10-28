@@ -2507,6 +2507,7 @@ dependencies = [
  "chrono",
  "easy-jsonrpc-mw",
  "ed25519-dalek",
+ "grin_api",
  "grin_core",
  "grin_keychain",
  "grin_p2p",
