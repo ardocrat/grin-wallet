@@ -276,6 +276,14 @@ fn comments() -> HashMap<String, String> {
 	);
 
 	retval.insert(
+		"min_circuit_timeout_ms".to_string(),
+		"
+#Minimum Tor circuit build timeout in milliseconds
+"
+		.to_string(),
+	);
+
+	retval.insert(
 		"[tor.bridge]".to_string(),
 		"
 #########################################
