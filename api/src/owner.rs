@@ -38,7 +38,7 @@ use crate::libwallet::{
 use crate::util::logger::LoggingConfig;
 use crate::util::secp::{key::SecretKey, pedersen::Commitment};
 use crate::util::{from_hex, static_secp_instance, Mutex, ZeroingString};
-use grin_wallet_util::OnionV3Address;
+use grin_p2p::tor::ov3::OnionV3Address;
 
 use chrono::prelude::*;
 use ed25519_dalek::SigningKey as DalekSecretKey;

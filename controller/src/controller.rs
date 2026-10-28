@@ -23,8 +23,8 @@ use crate::libwallet::{
 };
 use crate::util::secp::key::SecretKey;
 use crate::util::{from_hex, static_secp_instance, to_base64, Mutex};
+use grin_p2p::tor::ov3::OnionV3Address;
 use grin_wallet_api::JsonId;
-use grin_wallet_util::OnionV3Address;
 
 use hyper::header::HeaderValue;
 use hyper::{Request, Response, StatusCode};

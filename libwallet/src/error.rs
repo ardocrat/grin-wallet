@@ -14,7 +14,6 @@
 
 //! Error types for libwallet
 
-use crate::util;
 use grin_core::core::{amount_to_hr_string, committed, transaction};
 use grin_core::libtx;
 use grin_util::secp;
@@ -73,7 +72,7 @@ pub enum Error {
 
 	/// Onion V3 Address Error
 	#[error("Onion V3 Address Error: {0}")]
-	OnionV3Address(#[from] util::OnionV3AddressError),
+	OnionV3Address(String),
 
 	/// Callback implementation error conversion
 	#[error("Trait Implementation error")]
@@ -381,6 +380,12 @@ impl From<bech32::Error> for Error {
 impl From<grin_p2p::tor::Error> for Error {
 	fn from(error: grin_p2p::tor::Error) -> Error {
 		Error::Tor(format!("{}", error))
+	}
+}
+
+impl From<grin_p2p::tor::ov3::OnionV3Error> for Error {
+	fn from(error: grin_p2p::tor::ov3::OnionV3Error) -> Error {
+		Error::OnionV3Address(format!("{}", error))
 	}
 }
 

@@ -127,7 +127,7 @@ impl TorSlateSender {
 				})?);
 			let timeout = Duration::from_secs(
 				config
-					.bootstrap_timeout_secs()
+					.request_timeout_secs()
 					.filter(|s| *s > 0)
 					.unwrap_or(REQUEST_TIMEOUT_SECS),
 			);
