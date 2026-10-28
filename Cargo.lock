@@ -2514,7 +2514,6 @@ dependencies = [
  "grin_wallet_config",
  "grin_wallet_impls",
  "grin_wallet_libwallet",
- "grin_wallet_util",
  "log",
  "rand 0.6.5",
  "ring",
