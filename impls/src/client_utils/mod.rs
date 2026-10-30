@@ -14,4 +14,4 @@
 
 mod client;
 
-pub use client::{Client, Error as ClientError, RUNTIME};
+pub use client::{Client, RUNTIME};

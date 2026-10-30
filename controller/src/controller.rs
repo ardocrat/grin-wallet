@@ -52,7 +52,8 @@ use grin_p2p::tor::config::TorConfig;
 use grin_p2p::tor::process::types::TorProcess;
 use grin_p2p::tor::start_onion_service;
 use grin_wallet_config::config::{
-	add_global_config_listener, get_global_config, remove_global_config_listener,
+	add_global_config_listener, get_global_config, get_global_tor_config,
+	remove_global_config_listener,
 };
 use grin_wallet_libwallet::slatepack::SlatepackAddressIndex;
 use http_body_util::{BodyExt, Full};
@@ -318,7 +319,7 @@ fn listener_tor_config(
 	bridge: Option<String>,
 	use_tor: Option<bool>,
 ) -> Result<TorWalletConfig, Error> {
-	let mut tor_config = get_global_config(config_path)?.tor_config();
+	let mut tor_config = get_global_tor_config(config_path)?;
 	if let Some(bridge) = bridge {
 		tor_config.bridge.bridge_line = Some(bridge);
 	}

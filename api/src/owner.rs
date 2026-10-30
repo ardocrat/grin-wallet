@@ -19,7 +19,7 @@ use crate::config::config::{reload_global_config, update_global_config, WALLET_C
 use crate::config::{TorWalletConfig, WalletConfig};
 use crate::core::core::OutputFeatures;
 use crate::core::global;
-use crate::impls::SlateSender as _;
+use crate::impls::HttpSlateSender as _;
 use crate::impls::TorSlateSender;
 use crate::keychain::{Identifier, Keychain};
 use crate::libwallet::api_impl::owner_updater::{start_updater_log_thread, StatusMessage};
@@ -2857,8 +2857,7 @@ pub fn try_slatepack_sync_workflow(
 	tor_config: &TorWalletConfig,
 	send_to_finalize: bool,
 ) -> Result<Slate, Error> {
-	let tor_addr = OnionV3Address::from(dest);
-	let mut sender = match TorSlateSender::new(&tor_addr.to_http_str(), tor_config) {
+	let sender = match TorSlateSender::new(dest, tor_config.clone()) {
 		Ok(s) => s,
 		Err(e) => {
 			debug!("Cannot create Tor Slate sender {:?}", e);
@@ -2866,7 +2865,7 @@ pub fn try_slatepack_sync_workflow(
 		}
 	};
 	warn!("Attempting to send transaction via Tor");
-	match sender.send_tx(slate, tor_config, send_to_finalize) {
+	match sender.send(slate, send_to_finalize) {
 		Ok(s) => Ok(s),
 		Err(e) => {
 			debug!("Could not send Slate via Tor: {}", e);
