@@ -2386,7 +2386,6 @@ dependencies = [
  "thiserror 2.0.18",
  "timer",
  "tokio",
- "tor-config",
  "tor-hscrypto",
  "tor-hsrproxy",
  "tor-hsservice",
