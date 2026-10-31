@@ -26,6 +26,24 @@ use crate::util::{from_hex, static_secp_instance, to_base64, Mutex};
 use grin_p2p::tor::ov3::OnionV3Address;
 use grin_wallet_api::JsonId;
 
+use crate::apiwallet::{
+	ConfigPath, EncryptedRequest, EncryptedResponse, EncryptionErrorResponse, Foreign,
+	ForeignCheckMiddlewareFn, ForeignRpc, Owner, OwnerRpc,
+};
+use easy_jsonrpc_mw;
+use easy_jsonrpc_mw::{Handler, MaybeReply};
+use grin_api::ApiBody;
+use grin_p2p::tor::arti::stop_tor_service;
+use grin_p2p::tor::config::TorConfig;
+use grin_p2p::tor::process::types::TorProcess;
+use grin_p2p::tor::{onion_service_status, start_onion_service, ServiceStatus};
+use grin_wallet_config::config::{
+	add_global_config_listener, get_global_config, get_global_tor_config,
+	remove_global_config_listener,
+};
+use grin_wallet_libwallet::slatepack::SlatepackAddressIndex;
+use http_body_util::{BodyExt, Full};
+use hyper::body::Incoming;
 use hyper::header::HeaderValue;
 use hyper::{Request, Response, StatusCode};
 use qr_code::QrCode;
@@ -39,25 +57,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread;
-
-use crate::apiwallet::{
-	ConfigPath, EncryptedRequest, EncryptedResponse, EncryptionErrorResponse, Foreign,
-	ForeignCheckMiddlewareFn, ForeignRpc, Owner, OwnerRpc,
-};
-use easy_jsonrpc_mw;
-use easy_jsonrpc_mw::{Handler, MaybeReply};
-use grin_api::ApiBody;
-use grin_p2p::tor::arti::stop_tor_service;
-use grin_p2p::tor::config::TorConfig;
-use grin_p2p::tor::process::types::TorProcess;
-use grin_p2p::tor::start_onion_service;
-use grin_wallet_config::config::{
-	add_global_config_listener, get_global_config, get_global_tor_config,
-	remove_global_config_listener,
-};
-use grin_wallet_libwallet::slatepack::SlatepackAddressIndex;
-use http_body_util::{BodyExt, Full};
-use hyper::body::Incoming;
+use std::time::Duration;
 use tokio::sync::mpsc;
 
 lazy_static! {
@@ -256,12 +256,33 @@ where
 						"Starting Tor Hidden Service for API listener at address {}, binding to {}",
 						onion_address, addr
 					);
-					let sp_address = SlatepackAddress::try_from(onion_address.clone())?;
-					let qr_string = match QrCode::new(sp_address.to_string()) {
-						Ok(qr) => qr.to_string(false, 3),
-						Err(_) => "Failed to generate QR code!".to_string(),
-					};
-					warn!("Slatepack Address is: {}\n{}", sp_address, qr_string);
+					loop {
+						match onion_service_status(onion_address.to_string()) {
+							ServiceStatus::Starting => {
+								thread::sleep(Duration::from_millis(500));
+								continue;
+							}
+							ServiceStatus::Running => {
+								let sp_address = SlatepackAddress::try_from(onion_address.clone())?;
+								let qr_string = match QrCode::new(sp_address.to_string()) {
+									Ok(qr) => qr.to_string(false, 3),
+									Err(_) => "Failed to generate QR code!".to_string(),
+								};
+								warn!("Slatepack Address is: {}\n{}", sp_address, qr_string);
+								break;
+							}
+							ServiceStatus::Errored(e) => {
+								warn!("Unable to start TOR listener");
+								error!("Tor Error: {}", e);
+								warn!("Listener is available on {}", addr);
+								return Err(Error::from(e));
+							}
+							ServiceStatus::Stopped => {
+								warn!("Tor service stopped.");
+								break;
+							}
+						}
+					}
 					Ok(service)
 				}
 				Err(e) => {
